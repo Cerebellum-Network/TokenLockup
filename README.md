@@ -75,7 +75,7 @@ function symbol() public view returns (string memory);
 function decimals() public view returns (uint8);
 ```
 
-### Only Can Call Burn Own Tokens
+### Only Can Burn Own Tokens
 
 The burn function can only be applied to the `msg.sender` account. This follows the principle that there are no special contract roles that could burn another token holders tokens.
 
