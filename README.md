@@ -196,7 +196,7 @@ Also, there cannot be more than `maxTokenSchedules` for any account to avoid ove
 
 ## Gas Optimization
 
-To reduce gas fees the schedule is referenced by a single ID. Unlocked tokens are calculated using a formula. This keeps each transfer from requiring it's own vesting schedule data storage and drops the number of SSTORE values from an array of dates and amounts per transaction (`2n + 1` SSTORE values) to just and amount and a schedule value (`2` SSTORE values).
+To reduce gas fees the schedule is referenced by a single ID. Unlocked tokens are calculated using a formula. This keeps each transfer from requiring it's own vesting schedule data storage and drops the number of SSTORE values from an array of dates and amounts per transaction (`2n` SSTORE values) to just and amount and a schedule value (`2` SSTORE values).
 
 Since each SSTORE as of today costs an estimated `$3.45` in ETH. Optimizations could save hundreds of thousands of dollars for vesting schedules with many dates transferred to thousands of people. For example a 1 year monthly vesting schedule with 12 dates would need 2 SSTORE values for the amount and the schedule id (​`$6.90`) instead of 24 SSTORE values (`$82.80`) for 12 dates and amounts per transaction not including other computation or storage.
 
