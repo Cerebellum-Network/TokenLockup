@@ -1,6 +1,6 @@
 # Scheduled Release Token
 
-*Draft 2020-04-12 v0.0.2
+*Draft 2020-04-12 v0.0.2*
 
 ## Overview
 
@@ -143,7 +143,7 @@ contract ReleaseScheduler {
 
 A transfer can reference a release schedule by Id and that schedule will be applied.
 
-```
+```solidity
 transferWithReleaseSchedule(
 	address to, 
 	uint amount,
@@ -157,7 +157,7 @@ transferWithReleaseSchedule(
 
 Create the schedule:
 
-```
+```solidity
 // DRAFT PSEUDOCODE
 
 createReleaseSchedule(
@@ -171,7 +171,7 @@ createReleaseSchedule(
 
 Create a transfer with the release schedule
 
-```
+```solidity
 // DRAFT PSEUDOCODE
 
 transferWithReleaseSchedule(
@@ -202,7 +202,7 @@ To unlock the exact number of tokens needed for the final lockup period in the s
 
 Transfers can be done with an ERC20 style transfer interface that will transfer all unlocked tokens for all schedules belonging to the message sender.
 
-```
+```solidity
 transfer(to, amount)
 ```
 
@@ -215,25 +215,25 @@ transfer(to, amount)
 
 Check total locked and unlocked tokens for an address:
 
-```
+```solidity
 function balanceOf(address who) external view returns (uint256);
 ```
 
 Check just the locked tokens for an address:
 
-```
+```solidity
 function lockedBalanceOf(address who) external view returns (uint256);
 ```
 
 Check just the unlocked tokens for an address:
 
-```
+```solidity
 function unlockedBalanceOf(address who) external view returns (uint256);
 ```
 
 Check the total number of tokens stored in the smart contract:
 
-```
+```solidity
 function totalSupply() external view returns (uint256);
 ```
 
@@ -241,7 +241,7 @@ function totalSupply() external view returns (uint256);
 
 Check total locked and unlocked tokens for an address:
 
-```
+```solidity
 function releaseSchedulesOf(address who, index) external view returns (uint amount, uint scheduleId, uint commencementDate, uint unlockedBalance, uint lockedBalance);
 ```
 
@@ -255,7 +255,7 @@ To avoid increasing computation requirements, gas cost for transfers and exceedi
 
 If the account has received an unwanted vesting lockup, recipient can burn the balance and remove the schedule of the `msg.sender` with:
 
-```
+```solidity
 burn(scheduleIndex)
 ```
 
@@ -263,7 +263,7 @@ burn(scheduleIndex)
 
 To avoid the possibility that a a recipient might have too many release schedules to calculate in the transfer function, individual release schedules can be separately with:
 
-```
+```solidity
 transfer(to, amount, scheduleId)
 ```
 
