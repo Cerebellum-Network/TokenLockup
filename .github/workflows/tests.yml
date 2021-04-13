@@ -11,6 +11,9 @@ jobs:
       
     - name: Setup Node.js environment
       uses: actions/setup-node@v2.1.4
+
+    - name: NPM install cache
+      uses: c-hive/gha-npm-cache@v1
     
     - name: Install Node dependencies
       run: npm install
