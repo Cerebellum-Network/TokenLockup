@@ -108,10 +108,10 @@ Lockup period schedules may be configured and funded without a central admin rol
 // DRAFT PSEUDOCODE
 contract ReleaseScheduler {
   struct ReleaseSchedule {
-    uint releaseCount,
-    uint delayUntilFirstReleaseInSeconds,
-    uint initialReleasePortionInBips,
-    uint periodBetweenReleasesInSeconds
+    uint releaseCount;
+    uint delayUntilFirstReleaseInSeconds;
+    uint initialReleasePortionInBips;
+    uint periodBetweenReleasesInSeconds;
   } 
 
   mapping(uint => ReleaseSchedule) public releaseSchedules;
@@ -123,7 +123,7 @@ contract ReleaseScheduler {
       uint delayUntilFirstReleaseInSeconds, // "cliff" or 0 for immediate relase
       uint initialReleasePortionInBips, // in 100ths of 1%
       uint periodBetweenReleasesInSeconds
-    ) returns (uint unlockScheduleId) {
+    ) public returns (uint unlockScheduleId) {
       // validate unlock totals 100%
       uint scheduleId = scheduleCount++;
       releaseSchedules[scheduleId] = ReleaseSchedule(...);

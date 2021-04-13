@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 const { expect } = require("chai");
 
-let ownerAccount, recipientAccount, token;
+let reserveAccount, recipientAccount, token;
 let decimals = 10;
 let totalSupply = 10000;
 
@@ -9,7 +9,7 @@ describe("Token", function() {
   beforeEach(async () => {
     const accounts = await hre.ethers.getSigners();
 
-    ownerAccount = accounts[0];
+    reserveAccount = accounts[0];
     recipientAccount = accounts[1];
 
     const Token = await hre.ethers.getContractFactory("Token");
@@ -17,7 +17,7 @@ describe("Token", function() {
       "Test Scheduled Release Token",
       "SCHR",
       decimals,
-      ownerAccount.address,
+      reserveAccount.address,
       totalSupply
     );
   });
@@ -28,11 +28,11 @@ describe("Token", function() {
     expect(await token.decimals()).to.equal(decimals);
 
     expect(await token.totalSupply()).to.equal(totalSupply);
-    expect(await token.balanceOf(ownerAccount.address)).to.equal(totalSupply);
+    expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply);
 
-    await (token.connect(ownerAccount).transfer(recipientAccount.address, 30));
+    await (token.connect(reserveAccount).transfer(recipientAccount.address, 30));
 
     expect(await token.balanceOf(recipientAccount.address)).to.equal(30);
-    expect(await token.balanceOf(ownerAccount.address)).to.equal(totalSupply - 30);
+    expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply - 30);
   });
 });
