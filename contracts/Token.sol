@@ -2,35 +2,32 @@
 pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract Token is ERC20 {
+    uint8 private customDecimals;
 
-    using SafeMath for uint256;
-
-    /**
-    * @param name: ERC20 name of the token
-    * @param symbol: ERC20 symbol (ticker) of the token
-    */
     constructor(
         string memory name,
         string memory symbol,
-        uint8 decimals,
+        uint8 _decimals,
         address tokenReserve,
         uint256 totalSupply
     )
     ERC20(name, symbol)
     {
-        require(decimals > 0, "Decimals cannot be less than 0");
+        require(_decimals > 0, "Decimals cannot be less than 0");
         require(tokenReserve != address(0), "Cannot have a non-address as reserve.");
         require(totalSupply > 0, "Cannot have a 0 total supply.");
 
-        _setupDecimals(decimals);
+        customDecimals = _decimals;
         _mint(tokenReserve, totalSupply);
     }
 
     function burn(uint256 amount) external {
         _burn(msg.sender, amount);
+    }
+
+    function decimals() public view override returns (uint8) {
+        return customDecimals;
     }
 }

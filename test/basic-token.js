@@ -2,7 +2,7 @@ const hre = require("hardhat");
 const { expect } = require("chai");
 
 let ownerAccount, recipientAccount, token;
-let decimals = 18;
+let decimals = 10;
 let totalSupply = 10000;
 
 describe("Token", function() {
