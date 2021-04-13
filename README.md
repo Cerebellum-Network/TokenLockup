@@ -1,4 +1,4 @@
-# Scheduled Release Token
+# Token Release Scheduler
 
 *Draft 2020-04-12 v0.0.2*
 
@@ -13,8 +13,6 @@ This is an Ethereum ERC-20 standard compatible token and scheduled release "vest
 * Allows for burning tokens to reduce supply (e.g. for permanent cross chain transfers to a new blockchain and burning excess reserve tokens to support token price)
 * Optimized to decrease the use of gas for the costly transfer schedules
 * Defends against hostile attacks using the non centralized lockup period functionality by allowing burning of unwanted lockup period tokens to punish griefing attacks
-
-
 
 ### At A Glance
 
@@ -106,7 +104,7 @@ Lockup period schedules may be configured and funded without a central admin rol
 
 ```solidity
 // DRAFT PSEUDOCODE
-contract ReleaseScheduler {
+contract TokenReleaseScheduler {
   struct ReleaseSchedule {
     uint releaseCount;
     uint delayUntilFirstReleaseInSeconds;
@@ -139,12 +137,12 @@ contract ReleaseScheduler {
 * The date is in unix timestamp format. The unlock time granularity is intended to be days roughly. The roughly 900 second blocktime variance for Ethereum block timestamp should be expected. However it is not an issued for a time specificity tolernace of roughly days.
 * The percentage is stored as 100ths of a percent - bips. The maximum specificity is multiple of 0.0001 represented as uint `1` bip.
 
-## Creating A Transfer With A Release Schedule
+## Fund A Release Schedule
 
 A transfer can reference a release schedule by Id and that schedule will be applied.
 
 ```solidity
-transferWithReleaseSchedule(
+fundReleaseSchedule(
 	address to, 
 	uint amount,
 	uint commencementDate,

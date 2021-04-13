@@ -1,6 +1,9 @@
 pragma solidity 0.8.3;
 
 contract TokenReleaseScheduler {
+
+    // TODO: constructor that specifies the token
+
     struct ReleaseSchedule {
         uint releaseCount;
         uint delayUntilFirstReleaseInSeconds;
@@ -28,4 +31,57 @@ contract TokenReleaseScheduler {
 
         return scheduleId;
     }
+
+
+    //TODO: implement fundReleaseSchedule
+    /*
+    function fundReleaseSchedule(
+        address to,
+        uint amount,
+        uint commencementDate,
+        uint scheduleId
+    ) public {
+        // TODO: check amount > minReleaseScheduleAmount
+    }
+
+    */
+
+
+    // TODO: conveniance method that makes it unecessary to call approve before fundReleaseSchedule?
+
+
+    // TODO: check locked and unlocked balances
+    /*
+    function totalSupply() external view returns (uint256);
+
+    function balanceOf(address who) external view returns (uint256);
+
+    function lockedBalanceOf(address who) external view returns (uint256);
+
+    function unlockedBalanceOf(address who) external view returns (uint256);
+
+    function releaseSchedulesOf(address who, index) external view
+        returns (uint amount, uint scheduleId, uint commencementDate, uint unlockedBalance, uint lockedBalance);
+    */
+
+
+
+    // TODO: MetaMask compatible transfers
+    /*
+    function name() public view returns (string memory);
+
+    function symbol() public view returns (string memory);
+
+    function decimals() public view returns (uint8);
+
+    function transfer(address to, uint256 value) external returns (bool);
+    */
+
+
+
+    // TODO: Griefer slashing and circumvention
+    /*
+        function burn(uint256 scheduleId) public;
+        function transfer(address to, uint256 value, uint scheduleId) external returns (bool);
+    */
 }

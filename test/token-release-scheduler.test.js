@@ -22,4 +22,12 @@ describe("TokenReleaseScheduler", function() {
         await releaser.connect(senderAccount).createReleaseSchedule(2,0,1,1);
         expect(await releaser.scheduleCount()).to.equal(2);
     });
+
+    // TODO: Use case tests
+    /*
+        // 10% immediately and remaining amount over 4 periods of 90 days
+        // 50% after 360 day delay and remaining amont over 4 periods of 90 days
+        // 30 day delay and then vesting every second for 360 days
+        // commencement 6 months ago with 12 periods of 1 month
+     */
 });
