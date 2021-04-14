@@ -1,8 +1,17 @@
 pragma solidity 0.8.3;
+//import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+//import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract TokenReleaseScheduler {
+//    using SafeERC20 for IERC20;
+    ERC20 public token;
+    uint8 privateDecimals;
 
     // TODO: constructor that specifies the token
+    constructor(address _token) {
+        token = ERC20(_token);
+    }
 
     struct ReleaseSchedule {
         uint releaseCount;
@@ -72,10 +81,12 @@ contract TokenReleaseScheduler {
 
     function symbol() public view returns (string memory);
 
-    function decimals() public view returns (uint8);
-
     function transfer(address to, uint256 value) external returns (bool);
     */
+
+    function decimals() public view returns (uint8) {
+        return token.decimals();
+    }
 
 
 
