@@ -3,25 +3,39 @@ const chai = require("chai");
 const { expect } = chai
 const { solidity } = require("ethereum-waffle");
 chai.use(solidity);
-chai.use(solidity);
 
 describe("TokenReleaseScheduler", function() {
-    let senderAccount, releaser;
+    let senderAccount, releaser, token;
+    const decimals = 10;
+    const totalSupply = 8e9
     beforeEach(async () => {
         const accounts = await hre.ethers.getSigners();
 
-        senderAccount = accounts[0];
+        reserveAccount = accounts[0];
 
+        const Token = await hre.ethers.getContractFactory("Token");
+
+        token = await Token.deploy(
+            "Test Scheduled Release Token",
+            "SCHR",
+            decimals,
+            reserveAccount.address,
+            totalSupply
+        );
         const TokenReleaseScheduler = await hre.ethers.getContractFactory("TokenReleaseScheduler");
-        releaser = await TokenReleaseScheduler.deploy();
+        releaser = await TokenReleaseScheduler.deploy(token.address);
     });
 
     it("createReleaseSchedule increments the schedulerCount", async function () {
-        await releaser.connect(senderAccount).createReleaseSchedule(2,0,1,1);
+        await releaser.connect(reserveAccount).createReleaseSchedule(2,0,1,1);
         expect(await releaser.scheduleCount()).to.equal(1);
-        await releaser.connect(senderAccount).createReleaseSchedule(2,0,1,1);
+        await releaser.connect(reserveAccount).createReleaseSchedule(2,0,1,1);
         expect(await releaser.scheduleCount()).to.equal(2);
     });
+
+    it("it displays the underlying token's name, symbol and decimals", async () => {
+        expect(await releaser.decimals()).to.equal(10)
+    })
 
     // TODO: Use case tests
     /*
