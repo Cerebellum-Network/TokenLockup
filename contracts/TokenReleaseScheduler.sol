@@ -1,17 +1,16 @@
 pragma solidity 0.8.3;
-//import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+//import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 //import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract TokenReleaseScheduler {
-//    using SafeERC20 for IERC20;
-    ERC20 public token;
-    uint8 privateDecimals;
+    // TODO: explore using SafeERC20
+    //    using SafeERC20 for IERC20;
 
-    // TODO: constructor that specifies the token
-    constructor(address _token) {
-        token = ERC20(_token);
-    }
+    ERC20 public token;
+    string private _name;
+    string private _symbol;
 
     struct ReleaseSchedule {
         uint releaseCount;
@@ -23,6 +22,16 @@ contract TokenReleaseScheduler {
     mapping(uint => ReleaseSchedule) public releaseSchedules;
 
     uint public scheduleCount;
+
+    /*  The constructor that specifies the token, name and symbol
+        The name should specify that it is an unlock contract
+        The symbol should end with " Unlock" & be less than 11 characters for MetaMask "custom token" compatibility
+    */
+    constructor (address _token, string memory name_, string memory symbol_) {
+        _name = name_;
+        _symbol = symbol_;
+        token = ERC20(_token);
+    }
 
     function createReleaseSchedule(
         uint releaseCount, // total number of releases including any initial "cliff'
@@ -74,12 +83,8 @@ contract TokenReleaseScheduler {
     */
 
 
-
-    // TODO: MetaMask compatible transfers
+    // TODO: ERC20 interface functions for easy MetaMask and Etherscan tooling compatibility
     /*
-    function name() public view returns (string memory);
-
-    function symbol() public view returns (string memory);
 
     function transfer(address to, uint256 value) external returns (bool);
     */
@@ -88,11 +93,22 @@ contract TokenReleaseScheduler {
         return token.decimals();
     }
 
+    function name() public view returns (string memory) {
+        return _name;
+    }
 
+    function symbol() public view returns (string memory) {
+        return _symbol;
+    }
 
     // TODO: Griefer slashing and circumvention
     /*
         function burn(uint256 scheduleId) public;
         function transfer(address to, uint256 value, uint scheduleId) external returns (bool);
     */
+
+    // TODO: reclaim locked tokens for stock vesting scenarios
+    // some schedules will have reclaimable true set
+    // for these contracts, tokens that are locked can be reclaimed by sender
+    // this is a nice to have for this version, may be a v2 function
 }
