@@ -16,14 +16,18 @@ describe("TokenReleaseScheduler", function() {
         const Token = await hre.ethers.getContractFactory("Token");
 
         token = await Token.deploy(
-            "Test Scheduled Release Token",
-            "SCHR",
+            "Xavier Yolo Zeus Token",
+            "XYZ",
             decimals,
             reserveAccount.address,
             totalSupply
         );
         const TokenReleaseScheduler = await hre.ethers.getContractFactory("TokenReleaseScheduler");
-        releaser = await TokenReleaseScheduler.deploy(token.address);
+        releaser = await TokenReleaseScheduler.deploy(
+            token.address,
+            "Xavier Yolo Zeus Token Lockup Release Scheduler",
+            "XYZ Lockup"
+        );
     });
 
     it("createReleaseSchedule increments the schedulerCount", async function () {
@@ -35,6 +39,8 @@ describe("TokenReleaseScheduler", function() {
 
     it("it displays the underlying token's name, symbol and decimals", async () => {
         expect(await releaser.decimals()).to.equal(10)
+        expect(await releaser.name()).to.equal("Xavier Yolo Zeus Token Lockup Release Scheduler")
+        expect(await releaser.symbol()).to.equal("XYZ Lockup")
     })
 
     // TODO: Use case tests
