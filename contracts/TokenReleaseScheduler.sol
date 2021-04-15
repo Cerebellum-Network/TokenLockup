@@ -32,7 +32,7 @@ contract TokenReleaseScheduler {
 
     mapping(address => Timelock[]) public timelocks;
     mapping(address => uint) internal _totalTokensUnlocked;
-    mapping (address => mapping (address => uint256)) internal _allowances;
+    mapping (address => mapping (address => uint)) internal _allowances;
 
     event Approval(address indexed from, address indexed spender, uint amount);
     event ScheduleBurned(address indexed from, uint timelockId);
@@ -115,7 +115,7 @@ contract TokenReleaseScheduler {
 
     // TODO: conveniance method that makes it unecessary to call approve before fundReleaseSchedule?
 
-    function lockedBalanceOf(address who) external view returns (uint256 amount) {
+    function lockedBalanceOf(address who) external view returns (uint amount) {
         amount = 0;
         for (uint i=0; i<timelocks[who].length; i++) {
             (, uint unlock) = _calculateReleaseUnlock(who, i);
@@ -124,7 +124,7 @@ contract TokenReleaseScheduler {
         return amount;
     }
 
-    function unlockedBalanceOf(address who) public view returns (uint256 amount) {
+    function unlockedBalanceOf(address who) public view returns (uint amount) {
         amount = 0;
         for (uint i=0; i<timelocks[who].length; i++) {
             (, uint unlock) = _calculateReleaseUnlock(who, i);
@@ -135,7 +135,7 @@ contract TokenReleaseScheduler {
 
     // TODO: check locked and unlocked balances
     /*
-    function totalSupply() external view returns (uint256);
+    function totalSupply() external view returns (uint);
 
 
     function releaseSchedulesOf(address who, index) external view
@@ -146,15 +146,15 @@ contract TokenReleaseScheduler {
     // TODO: ERC20 interface functions for easy MetaMask and Etherscan tooling compatibility
     /*
     */
-    function balanceOf(address who) external view returns (uint256) {
+    function balanceOf(address who) external view returns (uint) {
         return unlockedBalanceOf(who);
     }
 
-    function transfer(address to, uint256 value) external returns (bool) {
+    function transfer(address to, uint value) external returns (bool) {
         return _transfer(msg.sender, to, value);
     }
 
-    function transferFrom(address from, address to, uint256 value) external returns (bool) {
+    function transferFrom(address from, address to, uint value) external returns (bool) {
         require(_allowances[from][msg.sender] >= value, "Insufficient allowance to transferFrom");
         _allowances[from][msg.sender] -= value;
         return _transfer(from, to, value);
@@ -300,7 +300,7 @@ contract TokenReleaseScheduler {
     }
 
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
-    function _approve(address owner, address spender, uint256 amount) internal {
+    function _approve(address owner, address spender, uint amount) internal {
         require(owner != address(0), "Approve from the zero address");
         require(spender != address(0), "Approve to the zero address");
 
