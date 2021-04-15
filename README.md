@@ -185,9 +185,9 @@ The tokens can be transfered from the `recipientAddress` with the `transfer()` f
 | Release Schedule                                             | Percentage (bips)               | Release # | Amount    |
 | ------------------------------------------------------------ | ------------------------------- | --------- | --------- |
 | 2021-06-01 (commencementDate <br />+ 0 delayUntilFirstReleaseInSeconds) | 8%                              | 1         | 8         |
-| + 90 days                                                    | 30.33%                          | 2         | 30.33     |
-| + 180 days                                                   | 30.33%                          | 3         | 30.33     |
-| + 270 days                                                   | 31.33% + any rounding remainder | 4         | 31.33     |
+| + 90 days                                                    | 30.66%                          | 2         | 30.66     |
+| + 180 days                                                   | 30.66%                          | 3         | 30.66     |
+| + 270 days                                                   | 30.66% + 0.01 remainder | 4         | 30.67     |
 | ***Total***                                                  | ***100%***                      |           | ***100*** |
 
 #### Remainders
