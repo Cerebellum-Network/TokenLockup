@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.3;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 //import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 //import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
@@ -9,7 +9,7 @@ contract TokenReleaseScheduler {
     // TODO: explore using SafeERC20
     //    using SafeERC20 for IERC20;
 
-    ERC20 public token;
+    ERC20Burnable public token;
     string private _name;
     string private _symbol;
 
@@ -50,7 +50,7 @@ contract TokenReleaseScheduler {
     ) {
         _name = name_;
         _symbol = symbol_;
-        token = ERC20(_token);
+        token = ERC20Burnable(_token);
 
         require(_minReleaseScheduleAmount > token.decimals(), "Min release schedule amount cannot be less than 1 token");
         minReleaseScheduleAmount = _minReleaseScheduleAmount;
@@ -198,6 +198,10 @@ contract TokenReleaseScheduler {
     function burn(uint scheduleId, uint confirmationIdPlusOne) public {
         require(scheduleId < timelocks[msg.sender].length, "No such schedule"); // this also protects from overflow below
         require(confirmationIdPlusOne == scheduleId + 1, "A burn wasn't confirmed");
+
+        // actually burning the remaining tokens from the unlock
+        token.burn(timelocks[msg.sender][scheduleId].tokensRemaining);
+
         removeTimelock(msg.sender, scheduleId);
         emit ScheduleBurned(msg.sender, scheduleId);
     }
