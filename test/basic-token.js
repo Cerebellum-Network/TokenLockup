@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 const { expect } = require("chai");
 
-let reserveAccount, recipientAccount, token;
+let reserveAccount, recipientAccount, token, alice, bob;
 let decimals = 10;
 let totalSupply = 10000;
 
@@ -58,4 +58,118 @@ describe("Token", function() {
     expect(await token.balanceOf(recipientAccount.address)).to.equal(1)
     expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply - 1)
   })
+  //
+  // it('cannot transfer more tokens than you have', async () => {
+  //   expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply)
+  //   await token.transfer(recipientAccount.address, totalSupply + 1)
+  //
+  //   expect(await token.balanceOf(recipientAccount.address)).to.equal(0)
+  //   expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply)
+  // })
+  //
+  // it('cannot transfer more tokens than the account you are transferring from has', async () => {
+  //   expect(await token.balanceOf.call(alice)).to.equal(totalSupply)
+  //   await token.safeApprove(bob.address, 150, {
+  //     from: alice.address
+  //   })
+  //
+  //   await truffleAssert.reverts(token.transferFrom(alice, bob, 101, {
+  //     from: bob
+  //   }), "Insufficent tokens")
+  //   assert.equal(await token.balanceOf.call(alice), 100)
+  // })
+
+  // it('can safeApprove only when safeApprove value is 0', async () => {
+  //   assert.equal(await token.allowance(alice, bob), 0)
+  //
+  //   let tx = await token.safeApprove(bob, 20, {
+  //     from: alice
+  //   })
+  //
+  //   assert.equal(await token.allowance(alice, bob), 20)
+  //
+  //   truffleAssert.eventEmitted(tx, 'Approval', (ev) => {
+  //     assert.equal(ev.owner, alice)
+  //     assert.equal(ev.spender, bob)
+  //     assert.equal(ev.value, 20)
+  //     return true
+  //   })
+  //
+  //   await truffleAssert.reverts(token.safeApprove(bob, 1, {
+  //     from: alice
+  //   }), "Cannot approve from non-zero to non-zero allowance")
+  //
+  //   let tx2 = await token.safeApprove(bob, 0, {
+  //     from: alice
+  //   })
+  //
+  //   truffleAssert.eventEmitted(tx2, 'Approval', (ev) => {
+  //     assert.equal(ev.owner, alice)
+  //     assert.equal(ev.spender, bob)
+  //     assert.equal(ev.value, 0)
+  //     return true
+  //   })
+  //
+  //   assert.equal(await token.allowance(alice, bob), 0)
+  // })
+
+  // it('can increaseAllowance', async () => {
+  //   token.safeApprove(bob, 20, {
+  //     from: alice
+  //   })
+  //
+  //   let tx = await token.increaseAllowance(bob, 2, {
+  //     from: alice
+  //   })
+  //
+  //   truffleAssert.eventEmitted(tx, 'Approval', (ev) => {
+  //     assert.equal(ev.owner, alice)
+  //     assert.equal(ev.spender, bob)
+  //     assert.equal(ev.value,22)
+  //     return true
+  //   })
+  //
+  //   assert.equal(await token.allowance(alice, bob), 22)
+  // })
+
+  // it('can increaseAllowance from 0', async () => {
+  //   let tx = await token.increaseAllowance(bob, 2, {
+  //     from: alice
+  //   })
+  //
+  //   truffleAssert.eventEmitted(tx, 'Approval', (ev) => {
+  //     assert.equal(ev.owner, alice)
+  //     assert.equal(ev.spender, bob)
+  //     assert.equal(ev.value,2)
+  //     return true
+  //   })
+  //
+  //   assert.equal(await token.allowance(alice, bob), 2)
+  // })
+  //
+  // it('can decreaseAllowance', async () => {
+  //   token.safeApprove(bob, 20, {
+  //     from: alice
+  //   })
+  //
+  //   let tx = await token.decreaseAllowance(bob, 2, {
+  //     from: alice
+  //   })
+  //
+  //   truffleAssert.eventEmitted(tx, 'Approval', (ev) => {
+  //     assert.equal(ev.owner, alice)
+  //     assert.equal(ev.spender, bob)
+  //     assert.equal(ev.value,18)
+  //     return true
+  //   })
+  //
+  //   assert.equal(await token.allowance(alice, bob), 18)
+  // })
+  //
+  // it('cannot transfer more tokens than you have', async () => {
+  //   await truffleAssert.reverts(token.transfer(bob, 101, {
+  //     from: alice
+  //   }), "Insufficent tokens")
+  // })
+  //
 });
