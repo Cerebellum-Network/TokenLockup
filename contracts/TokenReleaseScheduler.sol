@@ -32,8 +32,10 @@ contract TokenReleaseScheduler {
 
     mapping(address => Timelock[]) public timelocks;
     mapping(address => uint) internal _totalTokensUnlocked;
+    mapping (address => mapping (address => uint256)) internal _allowances;
 
-    event TokensUnlocked(address indexed recipient, uint indexed amount);
+    event Approval(address indexed from, address indexed spender, uint amount);
+    event TokensUnlocked(address indexed recipient, uint amount);
 
     /*  The constructor that specifies the token, name and symbol
         The name should specify that it is an unlock contract
@@ -148,10 +150,32 @@ contract TokenReleaseScheduler {
     }
 
     function transfer(address to, uint256 value) external returns (bool) {
-        _unlockAllReleases(msg.sender);
-        require(_totalTokensUnlocked[msg.sender] >= value, "Not enough unlocked tokens to transfer");
-        _totalTokensUnlocked[msg.sender] -= value;
-        token.transfer(to, value);
+        return _transfer(msg.sender, to, value);
+    }
+
+    function transferFrom(address from, address to, uint256 value) external returns (bool) {
+        require(_allowances[from][msg.sender] >= value, "Insufficient allowance to transferFrom");
+        _allowances[from][msg.sender] -= value;
+        return _transfer(from, to, value);
+    }
+
+    // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
+    function approve(address spender, uint amount) external returns (bool) {
+        _approve(msg.sender, spender, amount);
+        return true;
+    }
+
+    // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
+    function increaseAllowance(address spender, uint addedValue) external returns (bool) {
+        _approve(msg.sender, spender, _allowances[msg.sender][spender] + addedValue);
+        return true;
+    }
+
+    // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
+    function decreaseAllowance(address spender, uint subtractedValue) external returns (bool) {
+        uint currentAllowance = _allowances[msg.sender][spender];
+        require(currentAllowance >= subtractedValue, "Decreased allowance below zero");
+        _approve(msg.sender, spender, _allowances[msg.sender][spender] - subtractedValue);
         return true;
     }
 
@@ -172,6 +196,14 @@ contract TokenReleaseScheduler {
         function burn(uint256 scheduleId) public;
         function transfer(address to, uint256 value, uint scheduleId) external returns (bool);
     */
+
+    function _transfer(address from, address to, uint256 value) internal returns (bool) {
+        _unlockAllReleases(from);
+        require(_totalTokensUnlocked[from] >= value, "Not enough unlocked tokens to transfer");
+        _totalTokensUnlocked[from] -= value;
+        token.transfer(to, value);
+        return true;
+    }
 
     // TODO: reclaim locked tokens for stock vesting scenarios
     // some schedules will have reclaimable true set
@@ -256,6 +288,15 @@ contract TokenReleaseScheduler {
             timelocks[recipient][releaseIndex] = timelocks[recipient][timelocks[recipient].length - 1];
         }
         timelocks[recipient].pop();
+    }
+
+    // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
+    function _approve(address owner, address spender, uint256 amount) internal {
+        require(owner != address(0), "Approve from the zero address");
+        require(spender != address(0), "Approve to the zero address");
+
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
     }
 
     function scheduleCount() external view returns (uint count) {
