@@ -112,16 +112,28 @@ contract TokenReleaseScheduler {
 
     // TODO: conveniance method that makes it unecessary to call approve before fundReleaseSchedule?
 
+    function lockedBalanceOf(address who) external view returns (uint256 amount) {
+        amount = 0;
+        for (uint i=0; i<timelocks[who].length; i++) {
+            (, uint unlock) = _calculateReleaseUnlock(who, i);
+            amount += timelocks[who][i].tokensRemaining - unlock;
+        }
+        return amount;
+    }
+
+    function unlockedBalanceOf(address who) public view returns (uint256 amount) {
+        amount = 0;
+        for (uint i=0; i<timelocks[who].length; i++) {
+            (, uint unlock) = _calculateReleaseUnlock(who, i);
+            amount += unlock;
+        }
+        return amount;
+    }
 
     // TODO: check locked and unlocked balances
     /*
     function totalSupply() external view returns (uint256);
 
-    function balanceOf(address who) external view returns (uint256);
-
-    function lockedBalanceOf(address who) external view returns (uint256);
-
-    function unlockedBalanceOf(address who) external view returns (uint256);
 
     function releaseSchedulesOf(address who, index) external view
         returns (uint amount, uint scheduleId, uint commencementDate, uint unlockedBalance, uint lockedBalance);
@@ -130,9 +142,18 @@ contract TokenReleaseScheduler {
 
     // TODO: ERC20 interface functions for easy MetaMask and Etherscan tooling compatibility
     /*
-
-    function transfer(address to, uint256 value) external returns (bool);
     */
+    function balanceOf(address who) external view returns (uint256) {
+        return unlockedBalanceOf(who);
+    }
+
+    function transfer(address to, uint256 value) external returns (bool) {
+        _unlockAllReleases(msg.sender);
+        require(_totalTokensUnlocked[msg.sender] >= value, "Not enough unlocked tokens to transfer");
+        _totalTokensUnlocked[msg.sender] -= value;
+        token.transfer(to, value);
+        return true;
+    }
 
     function decimals() public view returns (uint8) {
         return token.decimals();
