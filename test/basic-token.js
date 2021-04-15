@@ -35,4 +35,27 @@ describe("Token", function() {
     expect(await token.balanceOf(recipientAccount.address)).to.equal(30);
     expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply - 30);
   });
+
+  it('cannot mint tokens', async function () {
+    try {
+      await token.mint(reserveAccount.address, 100)
+    } catch(e) {
+      expect(e.message).to.equal("token.mint is not a function")
+    }
+  })
+
+  it('no freeze function', async function () {
+    try {
+      await token.freeze(reserveAccount.address)
+    } catch(e) {
+      expect(e.message).to.equal("token.freeze is not a function")
+    }
+  })
+
+  it("can transfer", async function() {
+    await token.transfer(recipientAccount.address, 1)
+
+    expect(await token.balanceOf(recipientAccount.address)).to.equal(1)
+    expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply - 1)
+  })
 });
