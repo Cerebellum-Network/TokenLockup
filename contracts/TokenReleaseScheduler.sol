@@ -1,4 +1,5 @@
-pragma solidity 0.8.3;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.7.4;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 //import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -19,18 +20,37 @@ contract TokenReleaseScheduler {
         uint periodBetweenReleasesInSeconds;
     }
 
-    mapping(uint => ReleaseSchedule) public releaseSchedules;
+    ReleaseSchedule[] public releaseSchedules;
+    uint public minReleaseScheduleAmount;
 
-    uint public scheduleCount;
+    struct Timelock {
+        uint scheduleId;
+        uint commencementTimestamp;
+        uint releasesDone;
+        uint tokensRemaining;
+    }
+
+    mapping(address => Timelock[]) public timelocks;
+    mapping(address => uint) internal _totalTokensUnlocked;
+
+    event TokensUnlocked(address indexed recipient, uint indexed amount);
 
     /*  The constructor that specifies the token, name and symbol
         The name should specify that it is an unlock contract
         The symbol should end with " Unlock" & be less than 11 characters for MetaMask "custom token" compatibility
     */
-    constructor (address _token, string memory name_, string memory symbol_) {
+    constructor (
+        address _token,
+        string memory name_,
+        string memory symbol_,
+        uint _minReleaseScheduleAmount
+    ) {
         _name = name_;
         _symbol = symbol_;
         token = ERC20(_token);
+
+        require(_minReleaseScheduleAmount > token.decimals(), "Min release schedule amount cannot be less than 1 token");
+        minReleaseScheduleAmount = _minReleaseScheduleAmount;
     }
 
     function createReleaseSchedule(
@@ -38,31 +58,56 @@ contract TokenReleaseScheduler {
         uint delayUntilFirstReleaseInSeconds, // "cliff" or 0 for immediate relase
         uint initialReleasePortionInBips, // in 100ths of 1%
         uint periodBetweenReleasesInSeconds
-    ) public returns (uint unlockScheduleId) {
-        // TODO: validate unlock totals 100%
+    )
+        external
+        returns
+    (
+        uint unlockScheduleId
+    ) {
+        require(releaseCount >= 1, "Cannot create an empty schedule");
+        require(initialReleasePortionInBips <= 1e4, "Cannot have an initial release in excess of 100%");
+        if (releaseCount > 1) {
+            require(periodBetweenReleasesInSeconds > 0, "Cannot have multiple periods with 0 time distance");
+        }
+        if (releaseCount == 1) {
+            require(initialReleasePortionInBips == 1e4, "If there is only one batch, initial release must be 100%");
+        }
 
-        // TODO: release schedule implementation
-        //    releaseSchedules[scheduleId] = ReleaseSchedule(...);
-        //    return scheduleId;
+        releaseSchedules.push(ReleaseSchedule(
+            releaseCount,
+            delayUntilFirstReleaseInSeconds,
+            initialReleasePortionInBips,
+            periodBetweenReleasesInSeconds
+        ));
 
-        uint scheduleId = scheduleCount++;
-
-        return scheduleId;
+        // returning the index of the newly added schedule
+        return releaseSchedules.length - 1;
     }
 
-
-    //TODO: implement fundReleaseSchedule
-    /*
     function fundReleaseSchedule(
         address to,
         uint amount,
-        uint commencementDate,
+        uint commencementDate, // 0 to start "now", otherwise no farther than 1 day in the past
         uint scheduleId
-    ) public {
-        // TODO: check amount > minReleaseScheduleAmount
-    }
+    ) external {
+        require(amount >= minReleaseScheduleAmount, "Cannot fund a release schedule with this few tokens");
+        if (commencementDate != 0) {
+            require(commencementDate >= block.timestamp - 1 days, "Cannot be more than 1 day in the past");
+        }
+        require(scheduleId < releaseSchedules.length, "Schedule id is out of bounds");
 
-    */
+        // It will revert via ERC20 implementation if there's no allowance
+        token.transferFrom(msg.sender, address(this), amount);
+
+        timelocks[to].push(
+            Timelock(
+                scheduleId,
+                commencementDate,
+                0, // 0 unlocks finished
+                amount
+            )
+        );
+    }
 
 
     // TODO: conveniance method that makes it unecessary to call approve before fundReleaseSchedule?
@@ -111,4 +156,88 @@ contract TokenReleaseScheduler {
     // some schedules will have reclaimable true set
     // for these contracts, tokens that are locked can be reclaimed by sender
     // this is a nice to have for this version, may be a v2 function
+    function _unlockRelease(address recipient, uint releaseIndex) internal {
+        (uint releasesDone, uint tokensUnlocked) = _calculateReleaseUnlock(recipient, releaseIndex);
+        uint scheduleId = timelocks[recipient][releaseIndex].scheduleId;
+
+        // If all releses from that timelock are done, delete the timelock, otherwise update it
+        if (releasesDone == releaseSchedules[scheduleId].releaseCount) {
+            removeTimelock(recipient, releaseIndex);
+        } else {
+            timelocks[recipient][releaseIndex].releasesDone = releasesDone;
+            timelocks[recipient][releaseIndex].tokensRemaining -= tokensUnlocked;
+        }
+
+        _totalTokensUnlocked[recipient] += tokensUnlocked;
+        emit TokensUnlocked(recipient, tokensUnlocked);
+    }
+
+    function _unlockAllReleases(address recipient) internal {
+        for (uint i=0; i<timelocks[recipient].length; i++) {
+            _unlockRelease(recipient, i);
+        }
+    }
+
+    function _calculateReleaseUnlock(
+        address recipient,
+        uint releaseIndex
+    )
+        internal view returns
+    (
+        uint releasesDone,
+        uint tokensToRelease
+    ){
+        tokensToRelease = 0;
+        uint scheduleId = timelocks[recipient][releaseIndex].scheduleId;
+        releasesDone = timelocks[recipient][releaseIndex].releasesDone;
+        uint tokensRemaining = timelocks[recipient][releaseIndex].tokensRemaining;
+
+        // Starting timestamp is commencement + delay until first release
+        uint currentUnlockTimestamp = timelocks[recipient][releaseIndex].commencementTimestamp
+            + releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds;
+
+        // Then we add one release delay per each finished release to arrive to the timestamp of the next release
+        currentUnlockTimestamp += releasesDone * releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
+
+        // Special case, handling the cliff separately
+        if ((currentUnlockTimestamp < block.timestamp) && (releasesDone == 0)) {
+            tokensToRelease += tokensRemaining * releaseSchedules[scheduleId].initialReleasePortionInBips / 1e4;
+            tokensRemaining -= tokensToRelease;
+            releasesDone = 1;
+        }
+
+        uint releasesRemaining = releaseSchedules[scheduleId].releaseCount -
+            timelocks[recipient][releaseIndex].releasesDone;
+        uint standardBatch = 0;
+        if (releasesRemaining > 0) {
+            standardBatch = tokensRemaining / releasesRemaining;
+        }
+
+        // For each *remaining* release that should unlock by now, unlock it
+        while ((currentUnlockTimestamp < block.timestamp) && (releasesRemaining > 0))
+        {
+            currentUnlockTimestamp += releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
+            releasesRemaining -= 1;
+            tokensToRelease += standardBatch;
+        }
+
+        // If last release was unlocked, add the remaining tokens to the batch
+        if (releasesRemaining == 0) {
+            tokensToRelease = tokensRemaining;
+        }
+
+        return (releasesDone, tokensToRelease);
+    }
+
+    function removeTimelock(address recipient, uint releaseIndex) internal {
+        // If the timelock to remove is the last one, just pop it, otherwise move the last one over the one to remove
+        if (timelocks[recipient].length - 1 == releaseIndex) {
+            timelocks[recipient][releaseIndex] = timelocks[recipient][timelocks[recipient].length - 1];
+        }
+        timelocks[recipient].pop();
+    }
+
+    function scheduleCount() external view returns (uint count) {
+        return releaseSchedules.length;
+    }
 }

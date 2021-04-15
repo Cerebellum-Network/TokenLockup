@@ -26,7 +26,8 @@ describe("TokenReleaseScheduler", function() {
         releaser = await TokenReleaseScheduler.deploy(
             token.address,
             "Xavier Yolo Zeus Token Lockup Release Scheduler",
-            "XYZ Lockup"
+            "XYZ Lockup",
+            1e10
         );
     });
 
