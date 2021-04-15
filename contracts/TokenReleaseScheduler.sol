@@ -35,6 +35,7 @@ contract TokenReleaseScheduler {
     mapping (address => mapping (address => uint256)) internal _allowances;
 
     event Approval(address indexed from, address indexed spender, uint amount);
+    event ScheduleBurned(address indexed from, uint timelockId);
     event TokensUnlocked(address indexed recipient, uint amount);
 
     /*  The constructor that specifies the token, name and symbol
@@ -193,11 +194,19 @@ contract TokenReleaseScheduler {
 
     // TODO: Griefer slashing and circumvention
     /*
-        function burn(uint256 scheduleId) public;
-        function transfer(address to, uint256 value, uint scheduleId) external returns (bool);
     */
+    function burn(uint scheduleId, uint confirmationIdPlusOne) public {
+        require(scheduleId < timelocks[msg.sender].length, "No such schedule"); // this also protects from overflow below
+        require(confirmationIdPlusOne == scheduleId + 1, "A burn wasn't confirmed");
+        removeTimelock(msg.sender, scheduleId);
+        emit ScheduleBurned(msg.sender, scheduleId);
+    }
 
-    function _transfer(address from, address to, uint256 value) internal returns (bool) {
+    function unlockRelease(uint scheduleId) public {
+        _unlockRelease(msg.sender, scheduleId);
+    }
+
+    function _transfer(address from, address to, uint value) internal returns (bool) {
         _unlockAllReleases(from);
         require(_totalTokensUnlocked[from] >= value, "Not enough unlocked tokens to transfer");
         _totalTokensUnlocked[from] -= value;
@@ -301,5 +310,9 @@ contract TokenReleaseScheduler {
 
     function scheduleCount() external view returns (uint count) {
         return releaseSchedules.length;
+    }
+
+    function viewRelease(address owner, uint timelockId) external view returns (Timelock memory lock) {
+        return timelocks[owner][timelockId];
     }
 }
