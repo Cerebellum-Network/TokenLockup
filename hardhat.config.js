@@ -1,5 +1,7 @@
 require("@nomiclabs/hardhat-waffle");
 require("solidity-coverage");
+require("hardhat-gas-reporter");
+require('dotenv').config();
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -23,5 +25,11 @@ module.exports = {
     hardhat: {},
   },
   solidity: "0.8.3",
+    gasReporter: {
+      coinmarketcap: process.env.COIN_MARKET_CAP_API,
+      currency: 'USD',
+      gasPrice: 120,
+      enabled: true
+    }
 };
 

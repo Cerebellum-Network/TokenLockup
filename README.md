@@ -1,6 +1,6 @@
 # Token Release Scheduler
 
-*Draft 2020-04-12 v0.0.2*
+Status: alpha - not feature complete or audited yet
 
 ## Overview
 
@@ -28,6 +28,14 @@ This is an Ethereum ERC-20 standard compatible token and scheduled release "vest
 | Transfer Restrictions | None                                                         |
 | Additional Functions  | Unlock Schedule related functions                            |
 | Griefer Protection    | Minimum locked scheduled token amount slashing               |
+
+# Dev Environment
+
+Clone this repo and `cd` into root. Then:
+* `npm install` to setup node libraries
+* `npm test` runs all tests and outputs code coverage
+* `npm run gas-cost` runs all tests and outputs gas cost for functions (needs a Coinmarket cap private key) 
+
 
 # Token Smart Contract
 

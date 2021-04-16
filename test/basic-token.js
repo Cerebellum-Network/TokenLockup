@@ -52,6 +52,12 @@ describe("Token", function() {
     }
   })
 
+  it('can burn own tokens', async function () {
+    expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply)
+    await token.burn(10)
+    expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply - 10)
+  })
+
   it("can transfer", async function() {
     await token.transfer(recipientAccount.address, 1)
 
