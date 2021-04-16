@@ -262,8 +262,11 @@ contract TokenReleaseScheduler {
         uint currentUnlockTimestamp = timelocks[recipient][releaseIndex].commencementTimestamp
             + releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds;
 
-        // Special case, handling the cliff separately
-        if ((currentUnlockTimestamp < block.timestamp) && (releasesDone == 0)) {
+        // Special case, handling the cliff separately. If it *is* a special case (i.e. if cliff is there)
+        if ((currentUnlockTimestamp < block.timestamp)
+            && (releasesDone == 0)
+            && (releaseSchedules[scheduleId].initialReleasePortionInBips > 0)
+        ) {
             tokensToRelease += tokensRemaining * releaseSchedules[scheduleId].initialReleasePortionInBips / 1e4;
             tokensRemaining -= tokensToRelease;
             releasesDone = 1;
