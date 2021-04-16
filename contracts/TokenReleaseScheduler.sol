@@ -262,9 +262,6 @@ contract TokenReleaseScheduler {
         uint currentUnlockTimestamp = timelocks[recipient][releaseIndex].commencementTimestamp
             + releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds;
 
-        // Then we add one release delay per each finished release to arrive to the timestamp of the next release
-        currentUnlockTimestamp += releasesDone * releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
-
         // Special case, handling the cliff separately
         if ((currentUnlockTimestamp < block.timestamp) && (releasesDone == 0)) {
             tokensToRelease += tokensRemaining * releaseSchedules[scheduleId].initialReleasePortionInBips / 1e4;
@@ -272,8 +269,11 @@ contract TokenReleaseScheduler {
             releasesDone = 1;
         }
 
-        uint releasesRemaining = releaseSchedules[scheduleId].releaseCount -
-            timelocks[recipient][releaseIndex].releasesDone;
+        // Then we add one release delay per each finished release to arrive to the timestamp
+        // of the first release that hasn't been processed yet (for releasesDone <- 0, that would be the cliff)
+        currentUnlockTimestamp += releasesDone * releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
+
+        uint releasesRemaining = releaseSchedules[scheduleId].releaseCount - releasesDone;
         uint standardBatch = 0;
         if (releasesRemaining > 0) {
             standardBatch = tokensRemaining / releasesRemaining;
@@ -285,11 +285,12 @@ contract TokenReleaseScheduler {
             currentUnlockTimestamp += releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
             releasesRemaining -= 1;
             tokensToRelease += standardBatch;
+            tokensRemaining -= standardBatch;
         }
 
         // If last release was unlocked, add the remaining tokens to the batch
         if (releasesRemaining == 0) {
-            tokensToRelease = tokensRemaining;
+            tokensToRelease += tokensRemaining;
         }
 
         return (releasesDone, tokensToRelease);
