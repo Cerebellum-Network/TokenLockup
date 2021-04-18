@@ -17,10 +17,10 @@ contract Token is ERC20 {
     {
         require(_decimals >= 0, "Decimals cannot be less than 0");
         require(totalSupply > 0, "Cannot have a 0 total supply.");
+        customDecimals = _decimals;
 
         for (uint i; i < mintAddresses.length; i++) {
             require(mintAddresses[i] != address(0), "Cannot have a non-address as reserve.");
-            customDecimals = _decimals;
             _mint(mintAddresses[i], mintAmounts[i]);
         }
     }
