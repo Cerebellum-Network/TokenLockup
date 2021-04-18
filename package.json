@@ -6,6 +6,8 @@
   "scripts": {
     "compile": "npx hardhat compile",
     "test": "npx hardhat coverage",
+    "lint": "npx standard",
+    "lint-fix": "npx standard --fix",
     "dry-test": "npx hardhat test",
     "gas-cost": "npx hardhat test"
   },
@@ -35,6 +37,21 @@
   "devDependencies": {
     "chai": "^4.3.4",
     "hardhat-gas-reporter": "^1.0.4",
-    "solidity-coverage": "^0.7.16"
+    "solidity-coverage": "^0.7.16",
+    "standard": "^16.0.3"
+  },
+  "standard": {
+    "globals": [
+      "describe",
+      "context",
+      "before",
+      "beforeEach",
+      "after",
+      "afterEach",
+      "it",
+      "expect",
+      "task",
+      "ethers"
+    ]
   }
 }

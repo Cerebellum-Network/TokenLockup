@@ -1,54 +1,54 @@
-const hre = require("hardhat");
-const { expect } = require("chai");
+const hre = require('hardhat')
+const { expect } = require('chai')
 
-let reserveAccount, recipientAccount, token, alice, bob;
-let decimals = 10;
-let totalSupply = 10000;
+let reserveAccount, recipientAccount, token
+const decimals = 10
+const totalSupply = 10000
 
-describe("Token", function() {
+describe('Token', function () {
   beforeEach(async () => {
-    const accounts = await hre.ethers.getSigners();
+    const accounts = await hre.ethers.getSigners()
 
-    reserveAccount = accounts[0];
-    recipientAccount = accounts[1];
+    reserveAccount = accounts[0]
+    recipientAccount = accounts[1]
 
-    const Token = await hre.ethers.getContractFactory("Token");
+    const Token = await hre.ethers.getContractFactory('Token')
     token = await Token.deploy(
-      "Test Scheduled Release Token",
-      "SCHR",
+      'Test Scheduled Release Token',
+      'SCHR',
       decimals,
       reserveAccount.address,
       totalSupply
-    );
-  });
+    )
+  })
 
-  it("deploys a token with the expected details", async function () {
-    expect(await token.name()).to.equal("Test Scheduled Release Token");
-    expect(await token.symbol()).to.equal("SCHR");
-    expect(await token.decimals()).to.equal(decimals);
+  it('deploys a token with the expected details', async function () {
+    expect(await token.name()).to.equal('Test Scheduled Release Token')
+    expect(await token.symbol()).to.equal('SCHR')
+    expect(await token.decimals()).to.equal(decimals)
 
-    expect(await token.totalSupply()).to.equal(totalSupply);
-    expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply);
+    expect(await token.totalSupply()).to.equal(totalSupply)
+    expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply)
 
-    await (token.connect(reserveAccount).transfer(recipientAccount.address, 30));
+    await (token.connect(reserveAccount).transfer(recipientAccount.address, 30))
 
-    expect(await token.balanceOf(recipientAccount.address)).to.equal(30);
-    expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply - 30);
-  });
+    expect(await token.balanceOf(recipientAccount.address)).to.equal(30)
+    expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply - 30)
+  })
 
   it('cannot mint tokens', async function () {
     try {
       await token.mint(reserveAccount.address, 100)
-    } catch(e) {
-      expect(e.message).to.equal("token.mint is not a function")
+    } catch (e) {
+      expect(e.message).to.equal('token.mint is not a function')
     }
   })
 
   it('no freeze function', async function () {
     try {
       await token.freeze(reserveAccount.address)
-    } catch(e) {
-      expect(e.message).to.equal("token.freeze is not a function")
+    } catch (e) {
+      expect(e.message).to.equal('token.freeze is not a function')
     }
   })
 
@@ -58,7 +58,7 @@ describe("Token", function() {
     expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply - 10)
   })
 
-  it("can transfer", async function() {
+  it('can transfer', async function () {
     await token.transfer(recipientAccount.address, 1)
 
     expect(await token.balanceOf(recipientAccount.address)).to.equal(1)
@@ -178,4 +178,4 @@ describe("Token", function() {
   //   }), "Insufficent tokens")
   // })
   //
-});
+})

@@ -1,0 +1,24 @@
+name: Lint
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      COIN_MARKET_CAP_API: ${{ secrets.COIN_MARKET_CAP_API }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2.1.4
+
+      - name: NPM install cache
+        uses: c-hive/gha-npm-cache@v1
+
+      - name: Install Node dependencies
+        run: npm install
+
+      - name: Run Tests
+        run: npm run lint

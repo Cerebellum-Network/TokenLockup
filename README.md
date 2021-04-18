@@ -35,6 +35,7 @@ Clone this repo and `cd` into root. Then:
 * `npm install` to setup node libraries
 * `npm test` runs all tests and outputs code coverage
 * `npm run gas-cost` runs all tests and outputs gas cost for functions (needs a Coinmarket cap private key) 
+* `npm run lint-fix` runs the linter and fixes the `standardjs` lint offenses or `npm run lint` to lint without fixing.
 
 
 # Token Smart Contract

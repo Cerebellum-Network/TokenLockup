@@ -1,17 +1,17 @@
-require("@nomiclabs/hardhat-waffle");
-require("solidity-coverage");
-require("hardhat-gas-reporter");
-require('dotenv').config();
+require('@nomiclabs/hardhat-waffle')
+require('solidity-coverage')
+require('hardhat-gas-reporter')
+require('dotenv').config()
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
-task("accounts", "Prints the list of accounts", async () => {
-  const accounts = await ethers.getSigners();
+task('accounts', 'Prints the list of accounts', async () => {
+  const accounts = await ethers.getSigners()
 
   for (const account of accounts) {
-    console.log(account.address);
+    console.log(account.address)
   }
-});
+})
 
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
@@ -20,16 +20,15 @@ task("accounts", "Prints the list of accounts", async () => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  defaultNetwork: "hardhat",
+  defaultNetwork: 'hardhat',
   networks: {
-    hardhat: {},
+    hardhat: {}
   },
-  solidity: "0.8.3",
-    gasReporter: {
-      coinmarketcap: process.env.COIN_MARKET_CAP_API,
-      currency: 'USD',
-      gasPrice: 120,
-      enabled: true
-    }
-};
-
+  solidity: '0.8.3',
+  gasReporter: {
+    coinmarketcap: process.env.COIN_MARKET_CAP_API,
+    currency: 'USD',
+    gasPrice: 120,
+    enabled: true
+  }
+}

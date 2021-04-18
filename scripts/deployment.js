@@ -1,27 +1,30 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional 
+// We require the Hardhat Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
 //
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-const hre = require("hardhat");
 
-async function main() {
+/* global decimals, ownerAccount, totalSupply */
+
+const hre = require('hardhat')
+
+async function main () {
   // Hardhat always runs the compile task when running scripts with its command
   // line interface.
   //
-  // If this script is run directly using `node` you may want to call compile 
+  // If this script is run directly using `node` you may want to call compile
   // manually to make sure everything is compiled
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const Token = await hre.ethers.getContractFactory("Token");
+  const Token = await hre.ethers.getContractFactory('Token')
   await Token.deploy(
-    "Test Scheduled Release Token",
-    "SCHR",
+    'Test Scheduled Release Token',
+    'SCHR',
     decimals,
     ownerAccount.address,
     totalSupply
-  );
+  )
 }
 
 // We recommend this pattern to be able to use async/await everywhere
@@ -29,6 +32,6 @@ async function main() {
 main()
   .then(() => process.exit(0))
   .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
+    console.error(error)
+    process.exit(1)
+  })
