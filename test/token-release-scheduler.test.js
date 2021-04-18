@@ -28,11 +28,12 @@ describe('TokenReleaseScheduler', function () {
     const Token = await hre.ethers.getContractFactory('Token')
 
     token = await Token.deploy(
-      'Xavier Yolo Zeus Token',
-      'XYZ',
+      'Test Scheduled Release Token',
+      'SCHR',
       decimals,
-      reserveAccount.address,
-      totalSupply
+      totalSupply,
+      [accounts[0].address],
+      [totalSupply]
     )
     const TokenReleaseScheduler = await hre.ethers.getContractFactory('TokenReleaseScheduler')
     releaser = await TokenReleaseScheduler.deploy(

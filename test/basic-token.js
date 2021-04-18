@@ -17,8 +17,9 @@ describe('Token', function () {
       'Test Scheduled Release Token',
       'SCHR',
       decimals,
-      reserveAccount.address,
-      totalSupply
+      totalSupply,
+      [accounts[0].address],
+      [totalSupply]
     )
   })
 

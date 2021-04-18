@@ -1,14 +1,8 @@
-// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-//import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-//import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract TokenReleaseScheduler {
-    // TODO: explore using SafeERC20
-    //    using SafeERC20 for IERC20;
-
     ERC20Burnable public token;
     string private _name;
     string private _symbol;
