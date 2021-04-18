@@ -1,19 +1,18 @@
 const hre = require("hardhat");
-const { expect } = require("chai");
+const {expect} = require("chai");
 var accounts, Token, reserveAccount, recipientAccount, decimals, totalSupply;
 
-describe("Token", async function() {
+describe("Token", async function () {
   beforeEach(async () => {
     accounts = await hre.ethers.getSigners();
     Token = await hre.ethers.getContractFactory("Token");
     reserveAccount = accounts[0];
     recipientAccount = accounts[1];
+    decimals = 10;
+    totalSupply = 10000;
   })
 
   it("deploys a token with the expected details", async function () {
-    decimals = 10;
-    totalSupply = 10000;
-
     token = await Token.deploy(
         "Test Scheduled Release Token",
         "SCHR",
@@ -31,15 +30,14 @@ describe("Token", async function() {
   });
 
   it("can deploy a token with 0 decimals", async function () {
-    let decimals = 0;
-    let totalSupply = 10000;
+    decimals = 0;
 
-      token = await Token.deploy(
-          "Test Scheduled Release Token",
-          "SCHR",
-          decimals,
-          accounts[0].address,
-          totalSupply)
+    token = await Token.deploy(
+        "Test Scheduled Release Token",
+        "SCHR",
+        decimals,
+        accounts[0].address,
+        totalSupply)
 
     expect(await token.decimals()).to.equal(0)
     await token.transfer(recipientAccount.address, 1)
