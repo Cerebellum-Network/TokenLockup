@@ -64,4 +64,24 @@ describe('Token', async () => {
     expect(error).to.be.a('error')
     expect(error.message).to.match(/^VM Exception.*Cannot have a non-address as reserve/)
   })
+
+  it('cannot have a totalSupply of 0', async () => {
+    let error
+
+    totalSupply = 0
+
+    try {
+      await Token.deploy(
+        'Test Scheduled Release Token',
+        'SCHR',
+        decimals,
+        accounts[0].address,
+        totalSupply)
+    } catch (e) {
+      error = e
+    }
+
+    expect(error).to.be.a('error')
+    expect(error.message).to.match(/^VM Exception.*Cannot have a 0 total supply/)
+  })
 })
