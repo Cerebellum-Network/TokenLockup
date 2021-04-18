@@ -1,8 +1,9 @@
 const hre = require('hardhat')
 const { expect } = require('chai')
 let accounts, Token, reserveAccount, recipientAccount, decimals, totalSupply
+const the0Address = '0x0000000000000000000000000000000000000000'
 
-describe('Token', async function () {
+describe('Token', async () => {
   beforeEach(async () => {
     accounts = await hre.ethers.getSigners()
     Token = await hre.ethers.getContractFactory('Token')
@@ -44,5 +45,23 @@ describe('Token', async function () {
 
     expect(await token.balanceOf(recipientAccount.address)).to.equal(1)
     expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply - 1)
+  })
+
+  it('cannot mint the reserve to the 0 address', async () => {
+    let error
+
+    try {
+      await Token.deploy(
+        'Test Scheduled Release Token',
+        'SCHR',
+        decimals,
+        the0Address,
+        totalSupply)
+    } catch (e) {
+      error = e
+    }
+
+    expect(error).to.be.a('error')
+    expect(error.message).to.match(/^VM Exception.*Cannot have a non-address as reserve/)
   })
 })
