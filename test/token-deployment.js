@@ -1,6 +1,6 @@
 const hre = require('hardhat')
 const { expect } = require('chai')
-let accounts, Token, reserveAccount, recipientAccount, decimals, totalSupply
+let accounts, Token, reserveAccount, recipientAccount, decimals, cap
 const the0Address = '0x0000000000000000000000000000000000000000'
 
 describe('Token', async () => {
@@ -10,7 +10,7 @@ describe('Token', async () => {
     reserveAccount = accounts[0]
     recipientAccount = accounts[1]
     decimals = 10
-    totalSupply = 10000
+    cap = 10000
   })
 
   it('deploys a token with the expected details', async () => {
@@ -18,17 +18,18 @@ describe('Token', async () => {
       'Test Scheduled Release Token',
       'SCHR',
       decimals,
-      totalSupply,
+      cap,
       [accounts[0].address],
-      [totalSupply]
+      [cap]
     )
 
     expect(await token.name()).to.equal('Test Scheduled Release Token')
     expect(await token.symbol()).to.equal('SCHR')
     expect(await token.decimals()).to.equal(decimals)
 
-    expect(await token.totalSupply()).to.equal(totalSupply)
-    expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply)
+    expect(await token.totalSupply()).to.equal(cap)
+    expect(await token.balanceOf(reserveAccount.address)).to.equal(cap)
+    expect(await token.cap()).to.equal(cap)
   })
 
   it('can mint to multiple addresses on deploy', async () => {
@@ -58,16 +59,16 @@ describe('Token', async () => {
       'Test Scheduled Release Token',
       'SCHR',
       decimals,
-      totalSupply,
+      cap,
       [accounts[0].address],
-      [totalSupply]
+      [cap]
     )
 
     expect(await token.decimals()).to.equal(0)
     await token.transfer(recipientAccount.address, 1)
 
     expect(await token.balanceOf(recipientAccount.address)).to.equal(1)
-    expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply - 1)
+    expect(await token.balanceOf(reserveAccount.address)).to.equal(cap - 1)
   })
 
   it('cannot mint the reserve to the 0 address', async () => {
@@ -78,9 +79,9 @@ describe('Token', async () => {
         'Test Scheduled Release Token',
         'SCHR',
         decimals,
-        totalSupply,
+        cap,
         [the0Address],
-        [totalSupply]
+        [cap]
       )
     } catch (e) {
       error = e
@@ -90,19 +91,41 @@ describe('Token', async () => {
     expect(error.message).to.match(/^VM Exception.*Cannot have a non-address as reserve/)
   })
 
-  it('cannot have a totalSupply of 0', async () => {
+  it('cannot mint more than the cap on deploy', async () => {
     let error
 
-    totalSupply = 0
+    cap = 100
 
     try {
       await Token.deploy(
         'Test Scheduled Release Token',
         'SCHR',
         decimals,
-        totalSupply,
+        cap,
+        [accounts[0].address, accounts[1].address],
+        [cap, 1]
+      )
+    } catch (e) {
+      error = e
+    }
+
+    expect(error).to.be.a('error')
+    expect(error.message).to.match(/^VM Exception.*total supply of tokens cannot exceed the cap/)
+  })
+
+  it('cannot have a totalSupply of 0', async () => {
+    let error
+
+    cap = 0
+
+    try {
+      await Token.deploy(
+        'Test Scheduled Release Token',
+        'SCHR',
+        decimals,
+        cap,
         [accounts[0].address],
-        [totalSupply]
+        [cap]
       )
     } catch (e) {
       error = e

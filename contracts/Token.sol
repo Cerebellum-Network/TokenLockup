@@ -1,27 +1,32 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract Token is ERC20 {
     uint8 private customDecimals;
+    uint256 public cap;
 
     constructor(
         string memory name,
         string memory symbol,
         uint8 _decimals,
-        uint256 totalSupply,
-        address[] memory mintAddresses,
-        uint256[] memory mintAmounts
+        uint256 _cap,
+        address[] memory _mintAddresses,
+        uint256[] memory _mintAmounts
     )
     ERC20(name, symbol)
     {
         require(_decimals >= 0, "Decimals cannot be less than 0");
-        require(totalSupply > 0, "Cannot have a 0 total supply.");
+        require(_cap > 0, "Cannot have a 0 total supply.");
         customDecimals = _decimals;
+        cap = _cap;
 
-        for (uint i; i < mintAddresses.length; i++) {
-            require(mintAddresses[i] != address(0), "Cannot have a non-address as reserve.");
-            _mint(mintAddresses[i], mintAmounts[i]);
+        for (uint i; i < _mintAddresses.length; i++) {
+            require(_mintAddresses[i] != address(0), "Cannot have a non-address as reserve.");
+            require(totalSupply() + _mintAmounts[i] <= cap, "total supply of tokens cannot exceed the cap");
+            _mint(_mintAddresses[i], _mintAmounts[i]);
         }
     }
 
