@@ -15,7 +15,7 @@ contract Token is ERC20 {
     )
     ERC20(name, symbol)
     {
-        require(_decimals > 0, "Decimals cannot be less than 0");
+        require(_decimals >= 0, "Decimals cannot be less than 0");
         require(tokenReserve != address(0), "Cannot have a non-address as reserve.");
         require(totalSupply > 0, "Cannot have a 0 total supply.");
 
