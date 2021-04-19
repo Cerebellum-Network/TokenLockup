@@ -71,6 +71,26 @@ describe('Token', async () => {
     expect(await token.balanceOf(reserveAccount.address)).to.equal(cap - 1)
   })
 
+  it('must have matching mint addresses and amounts', async () => {
+    let error
+
+    try {
+      await Token.deploy(
+        'Test Scheduled Release Token',
+        'SCHR',
+        decimals,
+        10,
+        [accounts[0].address],
+        [5, 5]
+      )
+    } catch (e) {
+      error = e
+    }
+
+    expect(error).to.be.a('error')
+    expect(error.message).to.match(/^VM Exception.*must have same number of mint addresses and amounts/)
+  })
+
   it('cannot mint the reserve to the 0 address', async () => {
     let error
 

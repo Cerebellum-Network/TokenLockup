@@ -19,6 +19,7 @@ contract Token is ERC20 {
     ERC20(name, symbol)
     {
         require(_cap > 0, "Cannot have a 0 total supply.");
+        require(_mintAddresses.length == _mintAmounts.length, "must have same number of mint addresses and amounts");
         customDecimals = _decimals;
         cap = _cap;
 
