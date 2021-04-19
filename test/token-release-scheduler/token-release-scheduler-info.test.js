@@ -105,7 +105,6 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       .to.equal('300')
 
     const schedule1 = await releaser.releaseSchedulesOf(recipient.address, 0)
-    console.log(schedule1)
     expect(schedule1.scheduleId).to.equal(0)
     expect(schedule1.commencementTimestamp).to.equal(commence)
     expect(schedule1.releasesDone).to.equal(0)
@@ -116,6 +115,5 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     expect(schedule2.commencementTimestamp).to.equal(commence)
     expect(schedule2.releasesDone).to.equal(0)
     expect(schedule2.tokensRemaining).to.equal(200)
-    console.log(schedule2)
   })
 })

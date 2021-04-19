@@ -107,21 +107,15 @@ contract TokenReleaseScheduler {
 
 
     function lockedBalanceOf(address who) public view returns (uint amount) {
-        amount = 0;
         for (uint i=0; i<timelocks[who].length; i++) {
-            (, uint unlock) = _calculateReleaseUnlock(who, i);
-            amount += timelocks[who][i].tokensRemaining - unlock;
+            amount += timelocks[who][i].tokensRemaining - unlockedBalanceOfTimelock(who,i);
         }
-        return amount;
     }
 
     function unlockedBalanceOf(address who) public view returns (uint amount) {
-        amount = 0;
         for (uint i=0; i<timelocks[who].length; i++) {
-            (, uint unlock) = _calculateReleaseUnlock(who, i);
-            amount += unlock;
+            amount += unlockedBalanceOfTimelock(who,i);
         }
-        return amount;
     }
 
     function lockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint unlock) {
@@ -129,8 +123,7 @@ contract TokenReleaseScheduler {
     }
 
     function unlockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint unlock) {
-        (, uint unlock) = _calculateReleaseUnlock(who, timelockIndex);
-        return unlock;
+        (, unlock) = _calculateReleaseUnlock(who, timelockIndex);
     }
 
     // TODO: totalSupply function
