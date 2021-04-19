@@ -19,10 +19,20 @@ task('accounts', 'Prints the list of accounts', async () => {
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
+
 module.exports = {
   defaultNetwork: 'hardhat',
   networks: {
-    hardhat: {}
+    hardhat: {
+      token: {
+        name: 'Token Test XYZ',
+        symbol: "XYZ",
+        decimals: 10,
+        totalSupply: 100,
+        mintAddresses: ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'],
+        mintAmounts: [100]
+      }
+    }
   },
   solidity: '0.8.3',
   gasReporter: {

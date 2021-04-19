@@ -7,6 +7,9 @@
 /* global decimals, ownerAccount, totalSupply */
 
 const hre = require('hardhat')
+const config = hre.network.config
+console.log('Deploy Network: ', hre.network.name)
+console.log(config.token)
 
 async function main () {
   // Hardhat always runs the compile task when running scripts with its command
@@ -19,11 +22,12 @@ async function main () {
   // We get the contract to deploy
   const Token = await hre.ethers.getContractFactory('Token')
   await Token.deploy(
-    'Test Scheduled Release Token',
-    'SCHR',
-    decimals,
-    ownerAccount.address,
-    totalSupply
+    config.token.name,
+    config.token.symbol,
+    config.token.decimals,
+    config.token.totalSupply,
+    config.token.mintAddresses,
+    config.token.mintAmounts
   )
 }
 
