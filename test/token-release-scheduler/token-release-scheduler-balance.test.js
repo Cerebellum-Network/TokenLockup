@@ -27,7 +27,6 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
   let releaser, token, reserveAccount, recipient
   const decimals = 10
   const totalSupply = 8e9
-
   beforeEach(async () => {
     const accounts = await hre.ethers.getSigners()
 
@@ -67,7 +66,6 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     const firstDelay = 0
     const firstBatchBips = 800 // 8%
     const batchDelay = 3600 * 24 * 4 // 4 days
-    const commence = await exactlyMoreThanOneDayAgo()
 
     expect(await releaser.unlockedBalanceOf(recipient.address))
       .to.equal(0)
@@ -85,7 +83,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     await releaser.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       totalRecipientAmount,
-      commence,
+      Math.floor(Date.now() / 1000) - 3600,
       0 // scheduleId
     )
 
@@ -120,5 +118,59 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
 
     expect(await releaser.balanceOf(recipient.address))
       .to.equal('100')
+  })
+
+  it('balanceOf returns the balance of all locked and unlocked tokens in multiple release schedules', async () => {
+    const totalRecipientAmount = 100
+    const totalBatches = 3
+    const firstDelay = 0
+    const firstBatchBips = 800 // 8%
+    const batchDelay = 3600 * 24 * 4 // 4 days
+    const commence = await exactlyMoreThanOneDayAgo()
+
+    expect(await releaser.unlockedBalanceOf(recipient.address))
+      .to.equal(0)
+    expect(await releaser.scheduleCount())
+      .to.equal(0)
+    await token.connect(reserveAccount).approve(releaser.address, totalRecipientAmount * 2)
+
+    await releaser.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    await releaser.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      totalRecipientAmount,
+      commence,
+      0 // scheduleId
+    )
+
+    expect(await releaser.unlockedBalanceOf(recipient.address))
+      .to.equal('8')
+
+    expect(await releaser.lockedBalanceOf(recipient.address))
+      .to.equal('92')
+
+    expect(await releaser.balanceOf(recipient.address))
+      .to.equal('100')
+
+    await releaser.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      totalRecipientAmount,
+      commence,
+      0 // scheduleId
+    )
+
+    expect(await releaser.unlockedBalanceOf(recipient.address))
+      .to.equal('16')
+
+    expect(await releaser.lockedBalanceOf(recipient.address))
+      .to.equal('184')
+
+    expect(await releaser.balanceOf(recipient.address))
+      .to.equal('200')
   })
 })

@@ -90,9 +90,9 @@ contract TokenReleaseScheduler {
         uint scheduleId
     ) external {
         require(amount >= minReleaseScheduleAmount, "Cannot fund a release schedule with this few tokens");
-        if (commencementDate != 0) {
-            require(commencementDate >= block.timestamp - 1 days, "Cannot be more than 1 day in the past");
-        }
+//        if (commencementDate != 0) {
+//            require(commencementDate >= block.timestamp - 1 days, "Cannot be more than 1 day in the past");
+//        }
         require(scheduleId < releaseSchedules.length, "Schedule id is out of bounds");
 
         // It will revert via ERC20 implementation if there's no allowance
