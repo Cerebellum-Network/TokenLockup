@@ -36,4 +36,19 @@ describe('TokenReleaseScheduler deployment test', async () => {
     expect(await releaser.token()).to.equal(token.address)
     expect(await releaser.minReleaseScheduleAmount()).to.equal('10000')
   })
+
+  it('must deploy with minReleaseScheduleAmount > 0 ', async () => {
+    let errorMessage
+    try {
+      await TokenReleaseScheduler.deploy(
+        token.address,
+        'Xavier Yolo Zeus Token Lockup Release Scheduler',
+        'XYZ Lockup',
+        0
+      )
+    } catch (e) {
+      errorMessage = e.message
+    }
+    expect(errorMessage).to.match(/VM Exception.*Min release schedule amount cannot be less than 1 token/)
+  })
 })
