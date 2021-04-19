@@ -152,6 +152,6 @@ describe('Token', async () => {
     }
 
     expect(error).to.be.a('error')
-    expect(error.message).to.match(/^VM Exception.*Cannot have a 0 total supply/)
+    expect(error.message).to.match(/^VM Exception.*Cannot have 0 total supply/)
   })
 })
