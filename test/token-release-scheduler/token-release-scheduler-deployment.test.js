@@ -8,6 +8,8 @@ describe('TokenReleaseScheduler deployment test', async () => {
   let token, TokenReleaseScheduler, Token, accounts
   const decimals = 10
   const totalSupply = 8e9
+  const schedulerName = 'Test Scheduled Release Token'
+  const schedulerSymbol = 'XYZ Lockup'
 
   beforeEach(async () => {
     TokenReleaseScheduler = await hre.ethers.getContractFactory('TokenReleaseScheduler')
@@ -27,11 +29,13 @@ describe('TokenReleaseScheduler deployment test', async () => {
   it('expected default deployment configuration', async () => {
     const releaser = await TokenReleaseScheduler.deploy(
       token.address,
-      'Xavier Yolo Zeus Token Lockup Release Scheduler',
-      'XYZ Lockup',
+      schedulerName,
+      schedulerSymbol,
       1e4
     )
 
+    expect(await releaser.name()).to.equal(schedulerName)
+    expect(await releaser.symbol()).to.equal(schedulerSymbol)
     expect(await releaser.decimals()).to.equal(decimals)
     expect(await releaser.token()).to.equal(token.address)
     expect(await releaser.minReleaseScheduleAmount()).to.equal('10000')
@@ -42,7 +46,7 @@ describe('TokenReleaseScheduler deployment test', async () => {
     try {
       await TokenReleaseScheduler.deploy(
         token.address,
-        'Xavier Yolo Zeus Token Lockup Release Scheduler',
+        schedulerName,
         'XYZ Lockup',
         0
       )
