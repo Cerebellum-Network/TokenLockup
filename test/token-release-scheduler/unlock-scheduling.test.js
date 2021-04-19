@@ -15,7 +15,7 @@ const advanceTime = async (days) => {
   })
 }
 
-describe('TokenReleaseScheduler', async function () {
+describe('TokenReleaseScheduler unlock scheduling', async function () {
   let releaser, token, reserveAccount, alice
   const decimals = 10
   const totalSupply = 8e9
@@ -43,19 +43,6 @@ describe('TokenReleaseScheduler', async function () {
       'XYZ Lockup',
       1e4
     )
-  })
-
-  it('createReleaseSchedule increments the schedulerCount', async function () {
-    await releaser.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1)
-    expect(await releaser.scheduleCount()).to.equal(1)
-    await releaser.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1)
-    expect(await releaser.scheduleCount()).to.equal(2)
-  })
-
-  it("it displays the underlying token's name, symbol and decimals", async () => {
-    expect(await releaser.decimals()).to.equal(10)
-    expect(await releaser.name()).to.equal('Xavier Yolo Zeus Token Lockup Release Scheduler')
-    expect(await releaser.symbol()).to.equal('XYZ Lockup')
   })
 
   // TODO: Use case tests
