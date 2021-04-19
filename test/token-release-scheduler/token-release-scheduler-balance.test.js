@@ -234,5 +234,17 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
 
     expect(await releaser.balanceOf(recipient.address))
       .to.equal('200')
+
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 0))
+      .to.equal('92')
+
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0))
+      .to.equal('8')
+
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 1))
+      .to.equal('92')
+
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 1))
+      .to.equal('8')
   })
 })
