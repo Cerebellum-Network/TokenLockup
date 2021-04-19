@@ -16,7 +16,7 @@ const advanceTime = async (days) => {
 }
 
 describe('TokenReleaseScheduler unlock scheduling', async function () {
-  let releaser, token, reserveAccount, alice
+  let releaser, token, reserveAccount, recipient
   const decimals = 10
   const totalSupply = 8e9
 
@@ -24,7 +24,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     const accounts = await hre.ethers.getSigners()
 
     reserveAccount = accounts[0]
-    alice = accounts[1]
+    recipient = accounts[1]
 
     const Token = await hre.ethers.getContractFactory('Token')
 
@@ -41,7 +41,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
-      1e4
+      100 // low minimum to force rounding issues
     )
   })
 
@@ -53,18 +53,18 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
         // commencement 6 months ago with 12 periods of 1 month
      */
 
-  it('timelock creation', async () => {
-    const tokensForAlice = 1e8
+  it('timelock creation with immediately unlocked tokens', async () => {
+    const totalRecipientAmount = 100
     const totalBatches = 3
     const firstDelay = 0
     const firstBatchBips = 800 // 8%
     const batchDelay = 3600 * 24 * 4 // 4 days
 
-    expect(await releaser.unlockedBalanceOf(alice.address))
+    expect(await releaser.unlockedBalanceOf(recipient.address))
       .to.equal(0)
     expect(await releaser.scheduleCount())
       .to.equal(0)
-    await token.connect(reserveAccount).approve(releaser.address, tokensForAlice)
+    await token.connect(reserveAccount).approve(releaser.address, totalRecipientAmount)
 
     await releaser.connect(reserveAccount).createReleaseSchedule(
       totalBatches,
@@ -74,24 +74,33 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     )
 
     await releaser.connect(reserveAccount).fundReleaseSchedule(
-      alice.address,
-      tokensForAlice,
+      recipient.address,
+      totalRecipientAmount,
       Math.floor(Date.now() / 1000) - 3600,
       0 // scheduleId
     )
 
-    const firstBatch = tokensForAlice * firstBatchBips / 1e4
-    expect(await releaser.unlockedBalanceOf(alice.address))
-      .to.equal(firstBatch)
+    expect(await releaser.unlockedBalanceOf(recipient.address))
+      .to.equal('8')
 
-    await advanceTime(5)
+    expect(await releaser.lockedBalanceOf(recipient.address))
+      .to.equal('92')
 
-    expect(await releaser.unlockedBalanceOf(alice.address))
-      .to.equal(firstBatch + (tokensForAlice - firstBatch) / 2)
+    await advanceTime('5')
 
-    await advanceTime(5)
+    // firstBatch + ((totalRecipientAmount - firstBatch) / 2)
+    // 8 + ((100 - 8) / 2) = 8 + (92 / 2) = 8 + 46 = 54
+    expect(await releaser.unlockedBalanceOf(recipient.address))
+      .to.equal('54')
 
-    expect(await releaser.unlockedBalanceOf(alice.address))
-      .to.equal(tokensForAlice)
+    expect(await releaser.lockedBalanceOf(recipient.address))
+      .to.equal('46')
+
+    await advanceTime('5')
+
+    expect(await releaser.unlockedBalanceOf(recipient.address))
+      .to.equal(totalRecipientAmount)
+    expect(await releaser.lockedBalanceOf(recipient.address))
+      .to.equal('0')
   })
 })
