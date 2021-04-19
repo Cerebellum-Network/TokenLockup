@@ -4,8 +4,6 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 
-/* global decimals, ownerAccount, totalSupply */
-
 const hre = require('hardhat')
 const config = hre.network.config
 console.log('Deploy Network: ', hre.network.name)

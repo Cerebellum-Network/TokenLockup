@@ -26,7 +26,7 @@ module.exports = {
     hardhat: {
       token: {
         name: 'Token Test XYZ',
-        symbol: "XYZ",
+        symbol: 'XYZ',
         decimals: 10,
         totalSupply: 100,
         mintAddresses: ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'],
