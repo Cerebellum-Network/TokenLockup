@@ -7,7 +7,7 @@
     "compile": "npx hardhat compile",
     "test": "npx hardhat coverage && npm run lint",
     "lint": "npx standard",
-    "lint-fix": "npx standard --fix",
+    "fix": "npx standard --fix",
     "dry-test": "npx hardhat test",
     "gas-cost": "npx hardhat test"
   },
