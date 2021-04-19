@@ -157,6 +157,44 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
 
     expect(await releaser.balanceOf(recipient.address))
       .to.equal('100')
+  })
+
+  it('it can set a schedule to a balance in the past', async () => {
+    const totalRecipientAmount = 100
+    const totalBatches = 3
+    const firstDelay = 0
+    const firstBatchBips = 800 // 8%
+    const batchDelay = 3600 * 24 * 365 * 200 // 200 years
+    const commence = 0 // start of the unix epoch
+
+    expect(await releaser.unlockedBalanceOf(recipient.address))
+      .to.equal(0)
+    expect(await releaser.scheduleCount())
+      .to.equal(0)
+    await token.connect(reserveAccount).approve(releaser.address, totalRecipientAmount * 2)
+
+    await releaser.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    await releaser.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      totalRecipientAmount,
+      commence,
+      0 // scheduleId
+    )
+
+    expect(await releaser.unlockedBalanceOf(recipient.address))
+      .to.equal('8')
+
+    expect(await releaser.lockedBalanceOf(recipient.address))
+      .to.equal('92')
+
+    expect(await releaser.balanceOf(recipient.address))
+      .to.equal('100')
 
     await releaser.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
