@@ -4,17 +4,6 @@ const { expect } = chai
 const { solidity } = require('ethereum-waffle')
 chai.use(solidity)
 
-const advanceTime = async (days) => {
-  await hre.network.provider.request({
-    method: 'evm_increaseTime',
-    params: [days * 3600 * 24]
-  })
-  await hre.network.provider.request({
-    method: 'evm_mine',
-    params: []
-  })
-}
-
 async function currentTimestamp (offsetInSeconds = 0) {
   return (await hre.ethers.provider.getBlock()).timestamp + offsetInSeconds
 }
@@ -53,14 +42,6 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     )
   })
 
-  // TODO: Use case tests
-  /*
-        // 10% immediately and remaining amount over 4 periods of 90 days
-        // 50% after 360 day delay and remaining amont over 4 periods of 90 days
-        // 30 day delay and then vesting every second for 360 days
-        // commencement 6 months ago with 12 periods of 1 month
-     */
-
   it('timelock creation with immediately unlocked tokens', async () => {
     const totalRecipientAmount = 100
     const totalBatches = 3
@@ -98,27 +79,15 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     expect(await releaser.balanceOf(recipient.address))
       .to.equal('100')
 
-    await advanceTime('5')
-
-    // firstBatch + ((totalRecipientAmount - firstBatch) / 2)
-    // 8 + ((100 - 8) / 2) = 8 + (92 / 2) = 8 + 46 = 54
-    expect(await releaser.unlockedBalanceOf(recipient.address))
-      .to.equal('54')
-
-    expect(await releaser.lockedBalanceOf(recipient.address))
-      .to.equal('46')
-
-    expect(await releaser.balanceOf(recipient.address))
-      .to.equal('100')
-
-    await advanceTime('5')
+    await releaser.connect(recipient).burn(0, 1)
 
     expect(await releaser.unlockedBalanceOf(recipient.address))
-      .to.equal(totalRecipientAmount)
+      .to.equal('0')
+
     expect(await releaser.lockedBalanceOf(recipient.address))
       .to.equal('0')
 
     expect(await releaser.balanceOf(recipient.address))
-      .to.equal('100')
+      .to.equal('0')
   })
 })
