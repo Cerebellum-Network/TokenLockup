@@ -111,7 +111,7 @@ contract TokenReleaseScheduler {
 
     // TODO: conveniance method that makes it unecessary to call approve before fundReleaseSchedule?
 
-    function lockedBalanceOf(address who) external view returns (uint amount) {
+    function lockedBalanceOf(address who) public view returns (uint amount) {
         amount = 0;
         for (uint i=0; i<timelocks[who].length; i++) {
             (, uint unlock) = _calculateReleaseUnlock(who, i);
@@ -143,7 +143,7 @@ contract TokenReleaseScheduler {
     /*
     */
     function balanceOf(address who) external view returns (uint) {
-        return unlockedBalanceOf(who);
+        return unlockedBalanceOf(who) + lockedBalanceOf(who);
     }
 
     function transfer(address to, uint value) external returns (bool) {

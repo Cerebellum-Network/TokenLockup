@@ -86,6 +86,9 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     expect(await releaser.lockedBalanceOf(recipient.address))
       .to.equal('92')
 
+    expect(await releaser.balanceOf(recipient.address))
+      .to.equal('100')
+
     await advanceTime('5')
 
     // firstBatch + ((totalRecipientAmount - firstBatch) / 2)
@@ -96,11 +99,70 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     expect(await releaser.lockedBalanceOf(recipient.address))
       .to.equal('46')
 
+    expect(await releaser.balanceOf(recipient.address))
+      .to.equal('100')
+
     await advanceTime('5')
 
     expect(await releaser.unlockedBalanceOf(recipient.address))
       .to.equal(totalRecipientAmount)
     expect(await releaser.lockedBalanceOf(recipient.address))
       .to.equal('0')
+
+    expect(await releaser.balanceOf(recipient.address))
+      .to.equal('100')
+  })
+
+  it('balanceOf returns the balance of all locked and unlocked tokens', async () => {
+    const totalRecipientAmount = 100
+    const totalBatches = 3
+    const firstDelay = 0
+    const firstBatchBips = 800 // 8%
+    const batchDelay = 3600 * 24 * 4 // 4 days
+
+    expect(await releaser.unlockedBalanceOf(recipient.address))
+      .to.equal(0)
+    expect(await releaser.scheduleCount())
+      .to.equal(0)
+    await token.connect(reserveAccount).approve(releaser.address, totalRecipientAmount)
+
+    await releaser.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    await releaser.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      totalRecipientAmount,
+      Math.floor(Date.now() / 1000) - 3600,
+      0 // scheduleId
+    )
+
+    expect(await releaser.unlockedBalanceOf(recipient.address))
+      .to.equal('8')
+
+    expect(await releaser.lockedBalanceOf(recipient.address))
+      .to.equal('92')
+
+    expect(await releaser.balanceOf(recipient.address))
+      .to.equal('100')
+
+    // await releaser.connect(reserveAccount).createReleaseSchedule(
+    //   totalBatches,
+    //   firstDelay,
+    //   firstBatchBips,
+    //   batchDelay
+    // )
+    //
+    // expect(await releaser.unlockedBalanceOf(recipient.address))
+    //   .to.equal('16')
+    //
+    // expect(await releaser.lockedBalanceOf(recipient.address))
+    //   .to.equal('184')
+    //
+    // expect(await releaser.balanceOf(recipient.address))
+    //   .to.equal('200')
   })
 })
