@@ -106,8 +106,6 @@ contract TokenReleaseScheduler {
     }
 
 
-    // TODO: conveniance method that makes it unecessary to call approve before fundReleaseSchedule?
-
     function lockedBalanceOf(address who) public view returns (uint amount) {
         amount = 0;
         for (uint i=0; i<timelocks[who].length; i++) {
@@ -126,19 +124,15 @@ contract TokenReleaseScheduler {
         return amount;
     }
 
-    // TODO: check locked and unlocked balances
-    /*
-    function totalSupply() external view returns (uint);
+    // TODO: totalSupply function
+    // function totalSupply() external view returns (uint);
 
 
-    function releaseSchedulesOf(address who, index) external view
-        returns (uint amount, uint scheduleId, uint commencementDate, uint unlockedBalance, uint lockedBalance);
-    */
+    function releaseSchedulesOf(address who, uint256 index) public view
+        returns (Timelock memory timelock) {
+        return timelocks[who][index];
+    }
 
-
-    // TODO: ERC20 interface functions for easy MetaMask and Etherscan tooling compatibility
-    /*
-    */
     function balanceOf(address who) external view returns (uint) {
         return unlockedBalanceOf(who) + lockedBalanceOf(who);
     }
