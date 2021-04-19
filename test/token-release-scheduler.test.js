@@ -15,7 +15,7 @@ const advanceTime = async (days) => {
   })
 }
 
-describe('TokenReleaseScheduler', function () {
+describe('TokenReleaseScheduler', async function () {
   let releaser, token, reserveAccount, alice
   const decimals = 10
   const totalSupply = 8e9
