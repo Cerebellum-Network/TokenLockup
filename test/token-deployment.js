@@ -3,7 +3,7 @@ const { expect } = require('chai')
 let accounts, Token, reserveAccount, recipientAccount, decimals, cap
 const the0Address = '0x0000000000000000000000000000000000000000'
 
-describe('Token', async () => {
+describe('Token deployment', async () => {
   beforeEach(async () => {
     accounts = await hre.ethers.getSigners()
     Token = await hre.ethers.getContractFactory('Token')

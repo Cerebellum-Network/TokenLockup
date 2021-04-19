@@ -5,7 +5,7 @@ let reserveAccount, recipientAccount, token
 const decimals = 10
 const totalSupply = 10000
 
-describe('Token', function () {
+describe('Token functionality', function () {
   beforeEach(async () => {
     const accounts = await hre.ethers.getSigners()
 

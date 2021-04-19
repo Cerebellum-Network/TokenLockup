@@ -15,7 +15,7 @@ chai.use(solidity)
 //   })
 // }
 
-describe('TokenReleaseScheduler', async function () {
+describe('TokenReleaseScheduler create release schedule', async function () {
   let releaser, token, reserveAccount
   const decimals = 10
   const totalSupply = 8e9
@@ -44,7 +44,7 @@ describe('TokenReleaseScheduler', async function () {
     )
   })
 
-  it('createReleaseSchedule increments the schedulerCount', async function () {
+  it('increments the schedulerCount', async function () {
     await releaser.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1)
     expect(await releaser.scheduleCount()).to.equal(1)
     await releaser.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1)

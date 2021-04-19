@@ -19,6 +19,7 @@ describe('TokenReleaseScheduler', async function () {
   let releaser, token, reserveAccount, alice
   const decimals = 10
   const totalSupply = 8e9
+
   beforeEach(async () => {
     const accounts = await hre.ethers.getSigners()
 
