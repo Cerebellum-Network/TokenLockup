@@ -66,6 +66,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     const firstDelay = 0
     const firstBatchBips = 800 // 8%
     const batchDelay = 3600 * 24 * 4 // 4 days
+    const commence = await exactlyMoreThanOneDayAgo()
 
     expect(await releaser.unlockedBalanceOf(recipient.address))
       .to.equal(0)
@@ -83,7 +84,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     await releaser.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       totalRecipientAmount,
-      Math.floor(Date.now() / 1000) - 3600,
+      commence,
       0 // scheduleId
     )
 
