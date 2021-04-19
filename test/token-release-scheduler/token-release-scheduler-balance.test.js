@@ -121,8 +121,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       .to.equal('100')
   })
 
-  it('balanceOf returns the balance of all locked and unlocked tokens in multiple release schedules', async () => {
-    const totalRecipientAmount = 100
+  it('can return all balance types of locked and unlocked tokens in multiple release schedules', async () => {
     const totalBatches = 3
     const firstDelay = 0
     const firstBatchBips = 800 // 8%
@@ -133,7 +132,14 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       .to.equal(0)
     expect(await releaser.scheduleCount())
       .to.equal(0)
-    await token.connect(reserveAccount).approve(releaser.address, totalRecipientAmount * 2)
+    await token.connect(reserveAccount).approve(releaser.address, 300)
+
+    await releaser.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
 
     await releaser.connect(reserveAccount).createReleaseSchedule(
       totalBatches,
@@ -144,19 +150,28 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
 
     await releaser.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
-      totalRecipientAmount,
+      100,
       commence,
       0 // scheduleId
     )
 
+    await releaser.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      200,
+      commence,
+      1 // scheduleId
+    )
+
+    await advanceTime(1)
+
     expect(await releaser.unlockedBalanceOf(recipient.address))
-      .to.equal('8')
+      .to.equal('24')
 
     expect(await releaser.lockedBalanceOf(recipient.address))
-      .to.equal('92')
+      .to.equal('276')
 
     expect(await releaser.balanceOf(recipient.address))
-      .to.equal('100')
+      .to.equal('300')
   })
 
   it('it can set a schedule to a balance in the past', async () => {
