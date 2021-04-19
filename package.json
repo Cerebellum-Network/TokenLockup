@@ -52,7 +52,8 @@
       "it",
       "expect",
       "task",
-      "ethers"
+      "ethers",
+      "xit"
     ]
   }
 }

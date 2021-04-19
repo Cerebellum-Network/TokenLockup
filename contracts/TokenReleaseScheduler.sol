@@ -211,15 +211,11 @@ contract TokenReleaseScheduler {
         return true;
     }
 
-    // TODO: reclaim locked tokens for stock vesting scenarios
-    // some schedules will have reclaimable true set
-    // for these contracts, tokens that are locked can be reclaimed by sender
-    // this is a nice to have for this version, may be a v2 function
     function _unlockRelease(address recipient, uint releaseIndex) internal {
         (uint releasesDone, uint tokensUnlocked) = _calculateReleaseUnlock(recipient, releaseIndex);
         uint scheduleId = timelocks[recipient][releaseIndex].scheduleId;
 
-        // If all releses from that timelock are done, delete the timelock, otherwise update it
+        // If all releases from that timelock are done, delete the timelock, otherwise update it
         if (releasesDone == releaseSchedules[scheduleId].releaseCount) {
             removeTimelock(recipient, releaseIndex);
         } else {
