@@ -124,6 +124,15 @@ contract TokenReleaseScheduler {
         return amount;
     }
 
+    function lockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint unlock) {
+        return timelocks[who][timelockIndex].tokensRemaining - unlockedBalanceOfTimelock(who, timelockIndex);
+    }
+
+    function unlockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint unlock) {
+        (, uint unlock) = _calculateReleaseUnlock(who, timelockIndex);
+        return unlock;
+    }
+
     // TODO: totalSupply function
     // function totalSupply() external view returns (uint);
 
