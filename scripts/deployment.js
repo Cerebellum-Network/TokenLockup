@@ -4,11 +4,11 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 
-const hre = require('hardhat');
-const config = hre.network.config;
-const fs = require('fs');
-console.log('Deploy Network: ', hre.network.name);
-console.log(config.token);
+const hre = require('hardhat')
+const config = hre.network.config
+const fs = require('fs')
+console.log('Deploy Network: ', hre.network.name)
+console.log(config.token)
 
 async function main () {
   // Hardhat always runs the compile task when running scripts with its command
@@ -19,7 +19,7 @@ async function main () {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const Token = await hre.ethers.getContractFactory('Token');
+  const Token = await hre.ethers.getContractFactory('Token')
   const token = await Token.deploy(
     config.token.name,
     config.token.symbol,
@@ -27,20 +27,20 @@ async function main () {
     config.token.totalSupply,
     config.token.mintAddresses,
     config.token.mintAmounts
-  );
-  console.log("Deployed token at: ", token.address);
+  )
+  console.log('Deployed token at: ', token.address)
 
-  const TokenRelease = await hre.ethers.getContractFactory('TokenReleaseScheduler');
+  const TokenRelease = await hre.ethers.getContractFactory('TokenReleaseScheduler')
   const release = await TokenRelease.deploy(
     token.address,
-    config.token.name + " Lockup",
-    config.token.symbol + " Lockup",
+    config.token.name + ' Lockup',
+    config.token.symbol + ' Lockup',
     10 * 1e10,
     {
       gasLimit: 4000000
     }
-  );
-  console.log("Deployed release at: ", release.address);
+  )
+  console.log('Deployed release at: ', release.address)
 
   fs.writeFileSync(
     hre.network.name + 'Deployment.json',
@@ -50,7 +50,7 @@ async function main () {
         release: release.address
       }
     )
-  );
+  )
 }
 
 // We recommend this pattern to be able to use async/await everywhere
@@ -58,6 +58,6 @@ async function main () {
 main()
   .then(() => process.exit(0))
   .catch(error => {
-    console.error(error);
+    console.error(error)
     process.exit(1)
-  });
+  })
