@@ -204,8 +204,24 @@ contract TokenReleaseScheduler {
     function _transfer(address from, address to, uint value) internal returns (bool) {
         require(unlockedBalanceOf(from) >= value, "Not enough unlocked tokens to transfer");
 
-        //TODO: handle multiple timelock transfers
-        timelocks[from][0].tokensTransferred += value;
+        uint remainingTransfer = value;
+
+        // transfer from unlocked tokens
+        for (uint i = 0; i < timelocks[from].length; i++) {
+            // if the remainingTransfer is more than the unlocked balance use it all
+            if (remainingTransfer > unlockedBalanceOfTimelock(from, i)) {
+                remainingTransfer -= unlockedBalanceOfTimelock(from, i);
+                timelocks[from][i].tokensTransferred += unlockedBalanceOfTimelock(from, i);
+                // if the remainingTransfer is less than or eqaul to the unlocked balance
+                // use part or all and exit the loop
+            } else if (remainingTransfer <= unlockedBalanceOfTimelock(from, i)) {
+                timelocks[from][i].tokensTransferred += remainingTransfer;
+                remainingTransfer = 0;
+                break;
+            }
+        }
+
+        require(remainingTransfer == 0, "bad transfer"); // this should never happen
         token.transfer(to, value);
         return true;
     }

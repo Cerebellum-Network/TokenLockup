@@ -12,6 +12,21 @@ async function exactlyMoreThanOneDayAgo () {
   return await currentTimestamp(-3601)
 }
 
+function days (numDays) {
+  return 60 * 60 * 24 * numDays
+}
+
+const advanceTime = async (days) => {
+  await hre.network.provider.request({
+    method: 'evm_increaseTime',
+    params: [days * 3600 * 24]
+  })
+  await hre.network.provider.request({
+    method: 'evm_mine',
+    params: []
+  })
+}
+
 describe('TokenReleaseScheduler unlock scheduling', async function () {
   let releaser, token, reserveAccount, recipient, accounts
   const decimals = 10
@@ -38,7 +53,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
-      100 // low minimum to force rounding issues
+      30 // low minimum to force rounding issues
     )
   })
 
@@ -93,5 +108,97 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
 
     expect(await releaser.lockedBalanceOf(recipient.address))
       .to.equal('92')
+  })
+
+  it('unlocked tokens can be transferred from two batches', async () => {
+    const releaseCount = 2
+    const firstDelay = 0
+    const firstBatchBips = 5000
+    const commence = await currentTimestamp()
+    const periodBetweenReleases = days(4)
+    const recipientAccount = accounts[2].address
+
+    await token.connect(reserveAccount).approve(releaser.address, 200)
+
+    await releaser.connect(reserveAccount).createReleaseSchedule(
+      releaseCount,
+      firstDelay,
+      firstBatchBips,
+      periodBetweenReleases
+    )
+
+    // half of the 100 tokens from each release are available
+    await releaser.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      100,
+      commence,
+      0 // scheduleId
+    )
+
+    await releaser.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      100,
+      commence,
+      0 // scheduleId
+    )
+
+    // check the starting state is as expected
+    expect(await token.balanceOf(releaser.address)).to.equal(200)
+    expect(await releaser.unlockedBalanceOf(recipient.address)).to.equal('100')
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
+    expect(await token.connect(reserveAccount).balanceOf(recipientAccount)).to.equal(0)
+
+    // transfer 50 from the first timelock and 1 from the second timelock
+    await releaser.connect(recipient).transfer(recipientAccount, 51)
+
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
+
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('49')
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
+    expect(await token.connect(reserveAccount).balanceOf(recipientAccount)).to.equal(51)
+
+    // transfer 50 from the first timelock and 1 from the second timelock
+    await releaser.connect(recipient).transfer(recipientAccount, 49)
+
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
+
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('0')
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
+
+    expect(await token.connect(reserveAccount).balanceOf(recipientAccount)).to.equal(100)
+
+    // unlock the remaining tokens and check the state
+    advanceTime(4)
+    expect(await token.balanceOf(releaser.address)).to.equal(100)
+    expect(await releaser.unlockedBalanceOf(recipient.address)).to.equal('100')
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('0')
+
+    // transfer 50 from the second timelock and 1 from the second timelock
+    await releaser.connect(recipient).transfer(recipientAccount, 51)
+
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
+
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('49')
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('0')
+    expect(await token.connect(reserveAccount).balanceOf(recipientAccount)).to.equal(151)
+
+    // transfer 50 from the second timelock and 1 from the second timelock
+    await releaser.connect(recipient).transfer(recipientAccount, 49)
+
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
+
+    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('0')
+    expect(await releaser.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('0')
+    expect(await token.connect(reserveAccount).balanceOf(recipientAccount)).to.equal(200)
   })
 })
