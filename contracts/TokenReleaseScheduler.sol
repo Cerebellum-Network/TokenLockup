@@ -86,7 +86,7 @@ contract TokenReleaseScheduler {
     function fundReleaseSchedule(
         address to,
         uint amount,
-        uint commencementDate, // 0 to start "now", otherwise no farther than 1 day in the past
+        uint commencementTimestamp, // unix timestamp
         uint scheduleId
     ) external {
         require(amount >= minReleaseScheduleAmount, "Cannot fund a release schedule with this few tokens");
@@ -97,7 +97,7 @@ contract TokenReleaseScheduler {
 
         Timelock memory timelock;
         timelock.scheduleId = scheduleId;
-        timelock.commencementTimestamp = commencementDate;
+        timelock.commencementTimestamp = commencementTimestamp;
         timelock.totalAmount = amount;
 
         timelocks[to].push(timelock);
