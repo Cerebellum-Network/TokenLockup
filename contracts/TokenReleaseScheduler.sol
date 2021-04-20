@@ -91,6 +91,7 @@ contract TokenReleaseScheduler {
     ) external {
         require(amount >= minReleaseScheduleAmount, "Cannot fund a release schedule with this few tokens");
         require(scheduleId < releaseSchedules.length, "Schedule id is out of bounds");
+        require(amount >= releaseSchedules[scheduleId].releaseCount, "amount scheduled for release must be >= the number of release periods");
 
         // It will revert via ERC20 implementation if there's no allowance
         token.transferFrom(msg.sender, address(this), amount);

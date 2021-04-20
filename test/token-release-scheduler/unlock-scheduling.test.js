@@ -113,4 +113,36 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     expect(await releaser.balanceOf(recipient.address))
       .to.equal('100')
   })
+
+  it('must have more tokens than there are release periods', async () => {
+    const totalRecipientAmount = 100
+    const totalBatches = 101
+    const firstDelay = 0
+    const firstBatchBips = 0 // 8%
+    const batchDelay = 1
+    const commence = 0
+
+    await token.connect(reserveAccount).approve(releaser.address, totalRecipientAmount)
+
+    await releaser.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    let errorMessage
+    try {
+      await releaser.connect(reserveAccount).fundReleaseSchedule(
+        recipient.address,
+        totalRecipientAmount,
+        commence,
+        0 // scheduleId
+      )
+    } catch (e) {
+      errorMessage = e.message
+    }
+
+    expect(errorMessage).to.match(/amount scheduled for release must be >= the number of release periods/)
+  })
 })
