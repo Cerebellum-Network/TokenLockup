@@ -91,4 +91,20 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
 
     await releaser.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 11)
   })
+
+  it('cannot transferFrom approved amount that exceeds that locked token amount', async () => {
+    expect(await releaser.connect(recipient).balanceOf(recipient.address)).to.equal(100)
+    expect(await releaser.connect(recipient).unlockedBalanceOf(recipient.address)).to.equal(50)
+    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
+
+    await releaser.connect(recipient).approve(allowedAccount.address, 100) // more than unlocked less than balance
+    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(100)
+    let errorMessage
+    try {
+      await releaser.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 51)
+    } catch (e) {
+      errorMessage = e.message
+    }
+    expect(errorMessage).to.match(/VM Exception.*revert Not enough unlocked tokens to transfer/)
+  })
 })
