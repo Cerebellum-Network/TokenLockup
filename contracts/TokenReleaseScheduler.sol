@@ -230,6 +230,31 @@ contract TokenReleaseScheduler {
         }
     }
 
+    function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, uint scheduleId) public view returns(uint unlocked) {
+        uint secondsElapsed = currentTimestamp - commencedTimestamp;
+
+        // unlock the initial release if the delay has elapsed
+        if(secondsElapsed >= releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds){
+            unlocked += (amount * releaseSchedules[scheduleId].initialReleasePortionInBips) / 1e4;
+
+            // if at least one period after the delay has passed
+            if(secondsElapsed - releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds
+                >= releaseSchedules[scheduleId].periodBetweenReleasesInSeconds) {
+
+                // calculate the number of additional periods that have passed (not including the initial release)
+                // this discards any remainders (ie it truncates / rounds down)
+                uint additionalPeriods =
+                    (secondsElapsed - releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds) /
+                    releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
+
+                // unlocked includes the number of additionalPeriods past times the evenly distributed remaining amount
+                unlocked += additionalPeriods * ((amount - unlocked) / (releaseSchedules[scheduleId].releaseCount - 1));
+            }
+        }
+
+        return unlocked;
+    }
+
     function _calculateReleaseUnlock(
         address recipient,
         uint releaseIndex
