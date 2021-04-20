@@ -9,7 +9,8 @@
     "lint": "npx standard",
     "fix": "npx standard --fix",
     "dry-test": "npx hardhat test",
-    "gas-cost": "npx hardhat test"
+    "gas-cost": "npx hardhat test",
+    "deploy-rinkeby": "npx hardhat run scripts/deployment.js --network rinkeby"
   },
   "repository": {
     "type": "git",
