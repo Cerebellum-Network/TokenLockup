@@ -135,7 +135,7 @@ describe('TokenReleaseScheduler calculate unlocked', async function () {
         4, // totalBatches
         0, // firstDelay
         800, // firstBatchBips
-        months(3) // batchDelay
+        days(9) // batchDelay
       )
       scheduledId = tx.value.toString()
     })
@@ -169,10 +169,61 @@ describe('TokenReleaseScheduler calculate unlocked', async function () {
     })
   })
 
+  describe('7.7% released immediately and remainder released in equal amounts every 90 days for 360 days' +
+    '', async () => {
+    let scheduledId
+    const commenced = 0
+    const amount = 1000
+
+    beforeEach(async () => {
+      const tx = await releaser.connect(reserveAccount).createReleaseSchedule(
+        5, // totalBatches, initial plus 4 90 day releases
+        0, // firstDelay
+        770, // firstBatchBips
+        months(3) // batchDelay
+      )
+      scheduledId = tx.value.toString()
+    })
+
+    it('77 = 7.7% = 770 bips unlocked at start', async () => {
+      const currentTime = commenced
+
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(77)
+    })
+
+    it('307 = 77 + 230(truncated period portion) unlocked after one 90 day period', async () => {
+      const currentTime = commenced + months(3)
+
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(307)
+    })
+
+    it('537 = 77 + 230 * 2 periods unlocked after 180 days', async () => {
+      const currentTime = commenced + months(6)
+
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(537)
+    })
+
+    it('767 = 77 + 230 * 3 periods unlocked after 270 days', async () => {
+      const currentTime = commenced + months(9)
+
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(767)
+    })
+
+    it('1000 = 77 + 230 * 4 + 3(remainder) unlocked after 360 days', async () => {
+      const currentTime = commenced + months(12)
+
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(1000)
+    })
+  })
+
+
   // TODO: Use case tests
   /*
-        // 10% immediately and remaining amount over 4 periods of 90 days
-        // 50% after 360 day delay and remaining amont over 4 periods of 90 days
         // 30 day delay and then vesting every second for 360 days
         // commencement 6 months ago with 12 periods of 1 month
      */
