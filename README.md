@@ -249,7 +249,7 @@ function totalSupply() external view returns (uint256);
 Check total locked and unlocked tokens for an address:
 
 ```solidity
-function releaseSchedulesOf(address who, index) external view returns (uint amount, uint scheduleId, uint commencementDate, uint unlockedBalance, uint lockedBalance);
+function viewTimelock(address who, index) external view returns (uint amount, uint scheduleId, uint commencementDate, uint unlockedBalance, uint lockedBalance);
 ```
 
 ## Griefer Protection 

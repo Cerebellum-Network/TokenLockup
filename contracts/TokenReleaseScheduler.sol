@@ -137,7 +137,7 @@ contract TokenReleaseScheduler {
     // function totalSupply() external view returns (uint);
 
 
-    function releaseSchedulesOf(address who, uint256 index) public view
+    function viewTimelock(address who, uint256 index) public view
     returns (Timelock memory timelock) {
         return timelocks[who][index];
     }
@@ -261,9 +261,5 @@ contract TokenReleaseScheduler {
 
     function scheduleCount() external view returns (uint count) {
         return releaseSchedules.length;
-    }
-
-    function viewRelease(address owner, uint timelockId) external view returns (Timelock memory lock) {
-        return timelocks[owner][timelockId];
     }
 }
