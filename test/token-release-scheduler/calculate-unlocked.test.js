@@ -67,7 +67,58 @@ describe('TokenReleaseScheduler calculate unlocked', async function () {
     })
 
     it('100% unlocked after first batch bips', async () => {
-      const currentTime = commenced + months(1) + 1
+      const currentTime = commenced + months(1)
+
+      const unlockedAtStart = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlockedAtStart).to.equal(100)
+    })
+  })
+
+  describe('simple 1 month delay then 2 period 50/50', async () => {
+    let scheduledId
+    const commenced = 0
+    const amount = 100
+
+    beforeEach(async () => {
+      const tx = await releaser.connect(reserveAccount).createReleaseSchedule(
+        2, // totalBatches
+        months(1), // firstDelay
+        5000, // firstBatchBips
+        months(1) // batchDelay
+      )
+      scheduledId = tx.value.toString()
+    })
+
+    it('0% unlocked at start', async () => {
+      const currentTime = commenced
+
+      const unlockedAtStart = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlockedAtStart).to.equal(0)
+    })
+
+    it('0% unlocked 1 second before the initial delay has elapsed', async () => {
+      const currentTime = commenced + months(1) - 1
+
+      const unlockedAtStart = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlockedAtStart).to.equal(0)
+    })
+
+    it('50% unlocked after 1 month', async () => {
+      const currentTime = commenced + months(1)
+
+      const unlockedAtStart = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlockedAtStart).to.equal(50)
+    })
+
+    it('50% unlocked 1 second before the 2nd final period has elapsed', async () => {
+      const currentTime = commenced + months(2) - 1
+
+      const unlockedAtStart = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlockedAtStart).to.equal(50)
+    })
+
+    it('100% unlocked after 2 months', async () => {
+      const currentTime = commenced + months(2)
 
       const unlockedAtStart = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
       expect(unlockedAtStart).to.equal(100)
