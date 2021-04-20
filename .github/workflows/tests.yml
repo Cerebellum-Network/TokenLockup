@@ -7,6 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       COIN_MARKET_CAP_API: ${{ secrets.COIN_MARKET_CAP_API }}
+      RINKEBY: "witch collapse practice feed shame open despair creek road again ice least"
 
     steps:      
     - uses: actions/checkout@v2
