@@ -233,6 +233,15 @@ contract TokenReleaseScheduler {
     function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, uint scheduleId) public view returns(uint unlocked) {
         uint secondsElapsed = currentTimestamp - commencedTimestamp;
 
+        // return the full amount if the total lockup period has expired
+        // since all unlocked amounts in each period are truncated after the smallest unit
+        // unlocking the full amount also unlocks any remainder amounts in the final unlock period
+        // this is done first to reduce computation
+        if(secondsElapsed >= releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds +
+            (releaseSchedules[scheduleId].periodBetweenReleasesInSeconds * (releaseSchedules[scheduleId].releaseCount - 1))) {
+            return amount;
+        }
+
         // unlock the initial release if the delay has elapsed
         if(secondsElapsed >= releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds){
             unlocked += (amount * releaseSchedules[scheduleId].initialReleasePortionInBips) / 1e4;
@@ -251,8 +260,6 @@ contract TokenReleaseScheduler {
                 unlocked += additionalPeriods * ((amount - unlocked) / (releaseSchedules[scheduleId].releaseCount - 1));
             }
         }
-
-        return unlocked;
     }
 
     function _calculateReleaseUnlock(

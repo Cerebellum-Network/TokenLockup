@@ -62,8 +62,8 @@ describe('TokenReleaseScheduler calculate unlocked', async function () {
     it('50% unlocked at start', async () => {
       const currentTime = commenced
 
-      const unlockedAtStart = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlockedAtStart).to.equal(50)
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(50)
     })
 
     it('100% unlocked after first batch bips', async () => {
@@ -92,36 +92,90 @@ describe('TokenReleaseScheduler calculate unlocked', async function () {
     it('0% unlocked at start', async () => {
       const currentTime = commenced
 
-      const unlockedAtStart = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlockedAtStart).to.equal(0)
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(0)
     })
 
     it('0% unlocked 1 second before the initial delay has elapsed', async () => {
       const currentTime = commenced + months(1) - 1
 
-      const unlockedAtStart = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlockedAtStart).to.equal(0)
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(0)
     })
 
     it('50% unlocked after 1 month', async () => {
       const currentTime = commenced + months(1)
 
-      const unlockedAtStart = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlockedAtStart).to.equal(50)
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(50)
     })
 
     it('50% unlocked 1 second before the 2nd final period has elapsed', async () => {
       const currentTime = commenced + months(2) - 1
 
-      const unlockedAtStart = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlockedAtStart).to.equal(50)
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(50)
     })
 
     it('100% unlocked after 2 months', async () => {
       const currentTime = commenced + months(2)
 
-      const unlockedAtStart = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlockedAtStart).to.equal(100)
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(100)
     })
   })
+
+  describe('8% after 0 delay then remainder over 3 90 day periods with remainder in last period.', async () => {
+    let scheduledId
+    const commenced = 0
+    const amount = 100
+
+    beforeEach(async () => {
+      const tx = await releaser.connect(reserveAccount).createReleaseSchedule(
+        4, // totalBatches
+        0, // firstDelay
+        800, // firstBatchBips
+        months(3) // batchDelay
+      )
+      scheduledId = tx.value.toString()
+    })
+
+    it('8% unlocked at start', async () => {
+      const currentTime = commenced
+
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(8)
+    })
+
+    it('30 + 8 unlocked after 90 days', async () => {
+      const currentTime = commenced + months(3)
+
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(38)
+    })
+
+    it('60 + 8 unlocked after 180 days', async () => {
+      const currentTime = commenced + months(6)
+
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(68)
+    })
+
+    it('90 + 8 + remainder = 100 unlocked after 180 days', async () => {
+      const currentTime = commenced + months(9)
+
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(100)
+    })
+  })
+
+
+
+  // TODO: Use case tests
+  /*
+        // 10% immediately and remaining amount over 4 periods of 90 days
+        // 50% after 360 day delay and remaining amont over 4 periods of 90 days
+        // 30 day delay and then vesting every second for 360 days
+        // commencement 6 months ago with 12 periods of 1 month
+     */
 })
