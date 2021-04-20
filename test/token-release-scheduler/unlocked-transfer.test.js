@@ -42,7 +42,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     )
   })
 
-  xit('unlocked tokens can be transferred', async () => {
+  it('unlocked tokens can be transferred', async () => {
     const totalRecipientAmount = 100
     const totalBatches = 3
     const firstDelay = 0
@@ -69,6 +69,8 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       commence,
       0 // scheduleId
     )
+
+    expect(await token.balanceOf(releaser.address)).to.equal(100)
 
     expect(await releaser.unlockedBalanceOf(recipient.address))
       .to.equal('8')
