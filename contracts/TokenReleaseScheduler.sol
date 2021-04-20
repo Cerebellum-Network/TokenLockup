@@ -223,7 +223,8 @@ contract TokenReleaseScheduler {
             }
         }
 
-        require(remainingTransfer == 0, "bad transfer"); // this should never happen
+        require(remainingTransfer == 0, "bad transfer");
+        // this should never happen
         token.transfer(to, value);
         return true;
     }
@@ -254,7 +255,7 @@ contract TokenReleaseScheduler {
                 (secondsElapsed - releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds) /
                 releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
 
-                // unlocked includes the number of additionalPeriods past times the evenly distributed remaining amount
+                // unlocked includes the number of additionalPeriods elapsed, times the evenly distributed remaining amount
                 unlocked += additionalPeriods * ((amount - unlocked) / (releaseSchedules[scheduleId].releaseCount - 1));
             }
         }
