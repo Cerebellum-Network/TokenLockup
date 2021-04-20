@@ -285,9 +285,45 @@ describe('TokenReleaseScheduler calculate unlocked', async function () {
     })
   })
 
-  // TODO: Use case tests
-  /*
-        // 30 day delay and then vesting every second for 360 days
-        // commencement 6 months ago with 12 periods of 1 month
-     */
+  describe('continuous vesting per second', async () => {
+    let scheduledId
+    const commenced = 0
+    const numberOfSecondsInYear = 365 * 24 * 60 * 60 // 31,536,000
+    const amount = numberOfSecondsInYear // 1 token per second
+
+    beforeEach(async () => {
+      const tx = await releaser.connect(reserveAccount).createReleaseSchedule(
+        numberOfSecondsInYear, // totalBatches
+        0, // firstDelay
+        0, // firstBatchBips
+        1 // 1 per period
+      )
+      scheduledId = tx.value.toString()
+    })
+
+    it('0 unlocked at start', async () => {
+      const currentTime = commenced
+
+      const unlocked = await releaser.calculateUnlocked(commenced, currentTime, amount, scheduledId)
+      expect(unlocked).to.equal(0)
+    })
+
+    it('1 token unlocked each second for 1 year (365 days)', async () => {
+      expect(await releaser.calculateUnlocked(commenced, 1, amount, scheduledId)).to.equal(1)
+      expect(await releaser.calculateUnlocked(commenced, 1e6, amount, scheduledId)).to.equal(1e6)
+      expect(await releaser.calculateUnlocked(commenced, 31536000, amount, scheduledId)).to.equal(31536000)
+      expect(await releaser.calculateUnlocked(commenced, numberOfSecondsInYear, amount, scheduledId)).to.equal(numberOfSecondsInYear)
+      expect(await releaser.calculateUnlocked(commenced, numberOfSecondsInYear + 1, amount, scheduledId)).to.equal(numberOfSecondsInYear)
+    })
+
+    it('remainder of tokens delivered in the last period', async () => {
+      const remainder = numberOfSecondsInYear - 10 // if get smaller than this javascript rounds for us and the test fails incorrectly
+      const amount = numberOfSecondsInYear + remainder
+      // expect(await releaser.calculateUnlocked(commenced, 1, amount, scheduledId)).to.equal(1)
+      expect(await releaser.calculateUnlocked(commenced, 1e6, amount, scheduledId)).to.equal(1e6)
+      expect(await releaser.calculateUnlocked(commenced, numberOfSecondsInYear, amount, scheduledId)).to.equal(amount)
+      expect(await releaser.calculateUnlocked(commenced, numberOfSecondsInYear, amount, scheduledId)).to.equal(numberOfSecondsInYear + remainder)
+      expect(await releaser.calculateUnlocked(commenced, numberOfSecondsInYear + 1, amount, scheduledId)).to.equal(amount)
+    })
+  })
 })
