@@ -108,12 +108,14 @@ contract TokenReleaseScheduler {
         for (uint i = 0; i < timelocks[who].length; i++) {
             amount += lockedBalanceOfTimelock(who, i);
         }
+        return amount;
     }
 
     function unlockedBalanceOf(address who) public view returns (uint amount) {
         for (uint i = 0; i < timelocks[who].length; i++) {
             amount += unlockedBalanceOfTimelock(who, i);
         }
+        return amount;
     }
 
     function lockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint locked) {
@@ -230,8 +232,8 @@ contract TokenReleaseScheduler {
         uint secondsElapsed = currentTimestamp - commencedTimestamp;
 
         // return the full amount if the total lockup period has expired
-        // since all unlocked amounts in each period are truncated after the smallest unit
-        // unlocking the full amount also unlocks any remainder amounts in the final unlock period
+        // unlocked amounts in each period are truncated and round down remainders smaller than the smallest unit
+        // unlocking the full amount unlocks any remainder amounts in the final unlock period
         // this is done first to reduce computation
         if (secondsElapsed >= releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds +
         (releaseSchedules[scheduleId].periodBetweenReleasesInSeconds * (releaseSchedules[scheduleId].releaseCount - 1))) {
@@ -256,6 +258,8 @@ contract TokenReleaseScheduler {
                 unlocked += additionalPeriods * ((amount - unlocked) / (releaseSchedules[scheduleId].releaseCount - 1));
             }
         }
+
+        return unlocked;
     }
 
     function removeTimelock(address recipient, uint releaseIndex) internal {
