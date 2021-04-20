@@ -13,7 +13,7 @@ async function exactlyMoreThanOneDayAgo () {
 }
 
 describe('TokenReleaseScheduler unlock scheduling', async function () {
-  let releaser, token, reserveAccount, recipient, accounts
+  let releaser, token, reserveAccount, recipient, accounts, allowedAccount, allowedAccountRecipient
   const decimals = 10
   const totalSupply = 8e9
 
@@ -40,17 +40,15 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       'XYZ Lockup',
       30 // low minimum to force rounding issues
     )
-  })
 
-  it('unlocked tokens can be transferred by an approved account with balances from multiple lockups', async () => {
     const totalRecipientAmount = 100
-    const totalBatches = 3
+    const totalBatches = 2
     const firstDelay = 0
-    const firstBatchBips = 800 // 8%
+    const firstBatchBips = 5000 // 8%
     const batchDelay = 3600 * 24 * 4 // 4 days
     const commence = await exactlyMoreThanOneDayAgo()
-    const allowedAccount = accounts[3]
-    const allowedAccountRecipient = accounts[4]
+    allowedAccount = accounts[3]
+    allowedAccountRecipient = accounts[4]
 
     await token.connect(reserveAccount).approve(releaser.address, totalRecipientAmount)
 
@@ -67,9 +65,30 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       commence,
       0 // scheduleId
     )
+  })
 
+  it('unlocked tokens can be transferred by an approved account with balances from multiple lockups', async () => {
     expect(await releaser.connect(recipient).balanceOf(recipient.address)).to.equal(100)
+    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
+
     await releaser.connect(recipient).approve(allowedAccount.address, 7)
+    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(7)
     await releaser.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 7)
+  })
+
+  it('increaseAllowance and decreaseAllowance work', async () => {
+    expect(await releaser.connect(recipient).balanceOf(recipient.address)).to.equal(100)
+    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
+
+    await releaser.connect(recipient).approve(allowedAccount.address, 7)
+    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(7)
+
+    await releaser.connect(recipient).increaseAllowance(allowedAccount.address, 5)
+    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(12)
+
+    await releaser.connect(recipient).decreaseAllowance(allowedAccount.address, 1)
+    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(11)
+
+    await releaser.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 11)
   })
 })

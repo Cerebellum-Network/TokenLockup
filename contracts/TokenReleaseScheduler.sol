@@ -162,6 +162,11 @@ contract TokenReleaseScheduler {
     }
 
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
+    function allowance(address owner, address spender) public view returns (uint256) {
+        return _allowances[owner][spender];
+    }
+
+    // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
     function increaseAllowance(address spender, uint addedValue) external returns (bool) {
         _approve(msg.sender, spender, _allowances[msg.sender][spender] + addedValue);
         return true;
