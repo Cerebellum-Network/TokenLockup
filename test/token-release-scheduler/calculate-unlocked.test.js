@@ -169,8 +169,6 @@ describe('TokenReleaseScheduler calculate unlocked', async function () {
     })
   })
 
-
-
   // TODO: Use case tests
   /*
         // 10% immediately and remaining amount over 4 periods of 90 days
