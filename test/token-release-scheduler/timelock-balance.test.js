@@ -23,7 +23,7 @@ async function exactlyMoreThanOneDayAgo () {
   return await currentTimestamp(-3601)
 }
 
-describe('TokenReleaseScheduler unlock scheduling', async function () {
+describe('TokenReleaseScheduler timelock balances', async function () {
   let releaser, token, reserveAccount, recipient
   const decimals = 10
   const totalSupply = 8e9

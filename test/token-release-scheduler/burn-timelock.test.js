@@ -12,7 +12,7 @@ async function exactlyMoreThanOneDayAgo () {
   return await currentTimestamp(-3601)
 }
 
-describe('TokenReleaseScheduler unlock scheduling', async function () {
+describe('TokenReleaseScheduler burn timelock', async function () {
   let releaser, token, reserveAccount, recipient, accounts
   const decimals = 10
   const totalSupply = 8e9
@@ -42,7 +42,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     )
   })
 
-  it('timelock creation with immediately unlocked tokens', async () => {
+  it('burn timelock', async () => {
     const totalRecipientAmount = 100
     const totalBatches = 3
     const firstDelay = 0
