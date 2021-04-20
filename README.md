@@ -35,7 +35,7 @@ Clone this repo and `cd` into root. Then:
 * `npm install` to setup node libraries
 * `npm test` runs all tests and outputs code coverage
 * `npm run gas-cost` runs all tests and outputs gas cost for functions (needs a Coinmarket cap private key) 
-* `npm run lint-fix` runs the linter and fixes the `standardjs` lint offenses or `npm run lint` to lint without fixing.
+* `npm run fix` runs the linter and fixes the `standardjs` lint offenses or `npm run lint` to lint without fixing.
 
 
 # Token Smart Contract
@@ -249,7 +249,7 @@ function totalSupply() external view returns (uint256);
 Check total locked and unlocked tokens for an address:
 
 ```solidity
-function releaseSchedulesOf(address who, index) external view returns (uint amount, uint scheduleId, uint commencementDate, uint unlockedBalance, uint lockedBalance);
+function viewTimelock(address who, index) external view returns (uint amount, uint scheduleId, uint commencementDate, uint unlockedBalance, uint lockedBalance);
 ```
 
 ## Griefer Protection 

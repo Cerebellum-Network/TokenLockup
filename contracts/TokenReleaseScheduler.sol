@@ -22,13 +22,13 @@ contract TokenReleaseScheduler {
     struct Timelock {
         uint scheduleId;
         uint commencementTimestamp;
-        uint releasesDone;
-        uint tokensRemaining;
+        uint tokensTransferred;
+        uint totalAmount;
     }
 
     mapping(address => Timelock[]) public timelocks;
     mapping(address => uint) internal _totalTokensUnlocked;
-    mapping (address => mapping (address => uint)) internal _allowances;
+    mapping(address => mapping(address => uint)) internal _allowances;
 
     event Approval(address indexed from, address indexed spender, uint amount);
     event ScheduleBurned(address indexed from, uint timelockId);
@@ -58,8 +58,8 @@ contract TokenReleaseScheduler {
         uint initialReleasePortionInBips, // in 100ths of 1%
         uint periodBetweenReleasesInSeconds
     )
-        external
-        returns
+    external
+    returns
     (
         uint unlockScheduleId
     ) {
@@ -73,11 +73,11 @@ contract TokenReleaseScheduler {
         }
 
         releaseSchedules.push(ReleaseSchedule(
-            releaseCount,
-            delayUntilFirstReleaseInSeconds,
-            initialReleasePortionInBips,
-            periodBetweenReleasesInSeconds
-        ));
+                releaseCount,
+                delayUntilFirstReleaseInSeconds,
+                initialReleasePortionInBips,
+                periodBetweenReleasesInSeconds
+            ));
 
         // returning the index of the newly added schedule
         return releaseSchedules.length - 1;
@@ -86,7 +86,7 @@ contract TokenReleaseScheduler {
     function fundReleaseSchedule(
         address to,
         uint amount,
-        uint commencementDate, // 0 to start "now", otherwise no farther than 1 day in the past
+        uint commencementTimestamp, // unix timestamp
         uint scheduleId
     ) external {
         require(amount >= minReleaseScheduleAmount, "Cannot fund a release schedule with this few tokens");
@@ -95,43 +95,49 @@ contract TokenReleaseScheduler {
         // It will revert via ERC20 implementation if there's no allowance
         token.transferFrom(msg.sender, address(this), amount);
 
-        timelocks[to].push(
-            Timelock(
-                scheduleId,
-                commencementDate,
-                0, // 0 unlocks finished
-                amount
-            )
-        );
+        Timelock memory timelock;
+        timelock.scheduleId = scheduleId;
+        timelock.commencementTimestamp = commencementTimestamp;
+        timelock.totalAmount = amount;
+
+        timelocks[to].push(timelock);
     }
 
 
     function lockedBalanceOf(address who) public view returns (uint amount) {
-        for (uint i=0; i<timelocks[who].length; i++) {
-            amount += timelocks[who][i].tokensRemaining - unlockedBalanceOfTimelock(who,i);
+        for (uint i = 0; i < timelocks[who].length; i++) {
+            amount += lockedBalanceOfTimelock(who, i);
         }
+        return amount;
     }
 
     function unlockedBalanceOf(address who) public view returns (uint amount) {
-        for (uint i=0; i<timelocks[who].length; i++) {
-            amount += unlockedBalanceOfTimelock(who,i);
+        for (uint i = 0; i < timelocks[who].length; i++) {
+            amount += unlockedBalanceOfTimelock(who, i);
         }
+        return amount;
     }
 
-    function lockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint unlock) {
-        return timelocks[who][timelockIndex].tokensRemaining - unlockedBalanceOfTimelock(who, timelockIndex);
+    function lockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint locked) {
+        return timelocks[who][timelockIndex].totalAmount - totalUnlockedToDateOfTimelock(who, timelockIndex);
     }
 
-    function unlockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint unlock) {
-        (, unlock) = _calculateReleaseUnlock(who, timelockIndex);
+    function unlockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint unlocked) {
+        return totalUnlockedToDateOfTimelock(who, timelockIndex) - timelocks[who][timelockIndex].tokensTransferred;
     }
 
-    // TODO: totalSupply function
-    // function totalSupply() external view returns (uint);
+    function totalUnlockedToDateOfTimelock(address who, uint timelockIndex) public view returns (uint unlocked) {
+        return calculateUnlocked(
+            timelocks[who][timelockIndex].commencementTimestamp,
+            block.timestamp,
+            timelocks[who][timelockIndex].totalAmount,
+            timelocks[who][timelockIndex].scheduleId
+        );
+    }
 
 
-    function releaseSchedulesOf(address who, uint256 index) public view
-        returns (Timelock memory timelock) {
+    function viewTimelock(address who, uint256 index) public view
+    returns (Timelock memory timelock) {
         return timelocks[who][index];
     }
 
@@ -153,6 +159,11 @@ contract TokenReleaseScheduler {
     function approve(address spender, uint amount) external returns (bool) {
         _approve(msg.sender, spender, amount);
         return true;
+    }
+
+    // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
+    function allowance(address owner, address spender) public view returns (uint256) {
+        return _allowances[owner][spender];
     }
 
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
@@ -181,107 +192,81 @@ contract TokenReleaseScheduler {
         return _symbol;
     }
 
-    // TODO: Griefer slashing and circumvention
-    /*
-    */
-    function burn(uint scheduleId, uint confirmationIdPlusOne) public {
-        require(scheduleId < timelocks[msg.sender].length, "No such schedule"); // this also protects from overflow below
-        require(confirmationIdPlusOne == scheduleId + 1, "A burn wasn't confirmed");
-
-        // actually burning the remaining tokens from the unlock
-        token.burn(timelocks[msg.sender][scheduleId].tokensRemaining);
-
-        removeTimelock(msg.sender, scheduleId);
-        emit ScheduleBurned(msg.sender, scheduleId);
+    function totalSupply() external view returns (uint) {
+        return token.balanceOf(address(this));
     }
 
-    function unlockRelease(uint scheduleId) public {
-        _unlockRelease(msg.sender, scheduleId);
+    function burn(uint timelockIndex, uint confirmationIdPlusOne) public {
+        require(timelockIndex < timelocks[msg.sender].length, "No such schedule");
+
+        // this also protects from overflow below
+        require(confirmationIdPlusOne == timelockIndex + 1, "A burn wasn't confirmed");
+
+        // actually burning the remaining tokens from the unlock
+        token.burn(lockedBalanceOfTimelock(msg.sender, timelockIndex) + unlockedBalanceOfTimelock(msg.sender, timelockIndex));
+
+        removeTimelock(msg.sender, timelockIndex);
+        emit ScheduleBurned(msg.sender, timelockIndex);
     }
 
     function _transfer(address from, address to, uint value) internal returns (bool) {
-        _unlockAllReleases(from);
-        require(_totalTokensUnlocked[from] >= value, "Not enough unlocked tokens to transfer");
-        _totalTokensUnlocked[from] -= value;
+        require(unlockedBalanceOf(from) >= value, "Not enough unlocked tokens to transfer");
+
+        uint remainingTransfer = value;
+
+        // transfer from unlocked tokens
+        for (uint i = 0; i < timelocks[from].length; i++) {
+            // if the remainingTransfer is more than the unlocked balance use it all
+            if (remainingTransfer > unlockedBalanceOfTimelock(from, i)) {
+                remainingTransfer -= unlockedBalanceOfTimelock(from, i);
+                timelocks[from][i].tokensTransferred += unlockedBalanceOfTimelock(from, i);
+                // if the remainingTransfer is less than or equal to the unlocked balance
+                // use part or all and exit the loop
+            } else if (remainingTransfer <= unlockedBalanceOfTimelock(from, i)) {
+                timelocks[from][i].tokensTransferred += remainingTransfer;
+                remainingTransfer = 0;
+                break;
+            }
+        }
+
+        require(remainingTransfer == 0, "bad transfer");
+        // this should never happen
         token.transfer(to, value);
         return true;
     }
 
-    function _unlockRelease(address recipient, uint releaseIndex) internal {
-        (uint releasesDone, uint tokensUnlocked) = _calculateReleaseUnlock(recipient, releaseIndex);
-        uint scheduleId = timelocks[recipient][releaseIndex].scheduleId;
+    function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, uint scheduleId) public view returns (uint unlocked) {
+        uint secondsElapsed = currentTimestamp - commencedTimestamp;
 
-        // If all releases from that timelock are done, delete the timelock, otherwise update it
-        if (releasesDone == releaseSchedules[scheduleId].releaseCount) {
-            removeTimelock(recipient, releaseIndex);
-        } else {
-            timelocks[recipient][releaseIndex].releasesDone = releasesDone;
-            timelocks[recipient][releaseIndex].tokensRemaining -= tokensUnlocked;
+        // return the full amount if the total lockup period has expired
+        // unlocked amounts in each period are truncated and round down remainders smaller than the smallest unit
+        // unlocking the full amount unlocks any remainder amounts in the final unlock period
+        // this is done first to reduce computation
+        if (secondsElapsed >= releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds +
+        (releaseSchedules[scheduleId].periodBetweenReleasesInSeconds * (releaseSchedules[scheduleId].releaseCount - 1))) {
+            return amount;
         }
 
-        _totalTokensUnlocked[recipient] += tokensUnlocked;
-        emit TokensUnlocked(recipient, tokensUnlocked);
-    }
+        // unlock the initial release if the delay has elapsed
+        if (secondsElapsed >= releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds) {
+            unlocked += (amount * releaseSchedules[scheduleId].initialReleasePortionInBips) / 1e4;
 
-    function _unlockAllReleases(address recipient) internal {
-        for (uint i=0; i<timelocks[recipient].length; i++) {
-            _unlockRelease(recipient, i);
-        }
-    }
+            // if at least one period after the delay has passed
+            if (secondsElapsed - releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds
+                >= releaseSchedules[scheduleId].periodBetweenReleasesInSeconds) {
 
-    function _calculateReleaseUnlock(
-        address recipient,
-        uint releaseIndex
-    )
-        internal view returns
-    (
-        uint releasesDone,
-        uint tokensToRelease
-    ){
-        tokensToRelease = 0;
-        uint scheduleId = timelocks[recipient][releaseIndex].scheduleId;
-        releasesDone = timelocks[recipient][releaseIndex].releasesDone;
-        uint tokensRemaining = timelocks[recipient][releaseIndex].tokensRemaining;
+                // calculate the number of additional periods that have passed (not including the initial release)
+                // this discards any remainders (ie it truncates / rounds down)
+                uint additionalPeriods =
+                (secondsElapsed - releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds) /
+                releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
 
-        // Starting timestamp is commencement + delay until first release
-        uint currentUnlockTimestamp = timelocks[recipient][releaseIndex].commencementTimestamp
-            + releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds;
-
-        // Special case, handling the cliff separately. If it *is* a special case (i.e. if cliff is there)
-        if ((currentUnlockTimestamp < block.timestamp)
-            && (releasesDone == 0)
-            && (releaseSchedules[scheduleId].initialReleasePortionInBips > 0)
-        ) {
-            tokensToRelease += tokensRemaining * releaseSchedules[scheduleId].initialReleasePortionInBips / 1e4;
-            tokensRemaining -= tokensToRelease;
-            releasesDone = 1;
+                // unlocked includes the number of additionalPeriods elapsed, times the evenly distributed remaining amount
+                unlocked += additionalPeriods * ((amount - unlocked) / (releaseSchedules[scheduleId].releaseCount - 1));
+            }
         }
 
-        // Then we add one release delay per each finished release to arrive to the timestamp
-        // of the first release that hasn't been processed yet (for releasesDone <- 0, that would be the cliff)
-        currentUnlockTimestamp += releasesDone * releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
-
-        uint releasesRemaining = releaseSchedules[scheduleId].releaseCount - releasesDone;
-        uint standardBatch = 0;
-        if (releasesRemaining > 0) {
-            standardBatch = tokensRemaining / releasesRemaining;
-        }
-
-        // For each *remaining* release that should unlock by now, unlock it
-        while ((currentUnlockTimestamp < block.timestamp) && (releasesRemaining > 0))
-        {
-            currentUnlockTimestamp += releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
-            releasesRemaining -= 1;
-            tokensToRelease += standardBatch;
-            tokensRemaining -= standardBatch;
-        }
-
-        // If last release was unlocked, add the remaining tokens to the batch
-        if (releasesRemaining == 0) {
-            tokensToRelease += tokensRemaining;
-        }
-
-        return (releasesDone, tokensToRelease);
+        return unlocked;
     }
 
     function removeTimelock(address recipient, uint releaseIndex) internal {
@@ -303,9 +288,5 @@ contract TokenReleaseScheduler {
 
     function scheduleCount() external view returns (uint count) {
         return releaseSchedules.length;
-    }
-
-    function viewRelease(address owner, uint timelockId) external view returns (Timelock memory lock) {
-        return timelocks[owner][timelockId];
     }
 }

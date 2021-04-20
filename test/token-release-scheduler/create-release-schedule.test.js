@@ -4,17 +4,6 @@ const { expect } = chai
 const { solidity } = require('ethereum-waffle')
 chai.use(solidity)
 
-// const advanceTime = async (days) => {
-//   await hre.network.provider.request({
-//     method: 'evm_increaseTime',
-//     params: [days * 3600 * 24]
-//   })
-//   await hre.network.provider.request({
-//     method: 'evm_mine',
-//     params: []
-//   })
-// }
-
 describe('TokenReleaseScheduler create release schedule', async function () {
   let releaser, token, reserveAccount
   const decimals = 10
@@ -60,5 +49,35 @@ describe('TokenReleaseScheduler create release schedule', async function () {
     }
 
     expect(error.message).to.match(/VM Exception.*Cannot create an empty schedule/)
+  })
+
+  it('if there is one release it must release all tokens', async function () {
+    let error
+    try {
+      await releaser.connect(reserveAccount).createReleaseSchedule(1, 0, 1, 1)
+    } catch (e) {
+      error = e
+    }
+
+    expect(error.message).to.match(/VM Exception.*If there is only one batch, initial release must be 100%/)
+  })
+
+  it('if there is one release it can release all tokens on the first batch', async function () {
+    const tx = await releaser.connect(reserveAccount).createReleaseSchedule(1, 0, 10000, 1)
+    const scheduleId = tx.value.toString()
+    expect(scheduleId).to.equal('0')
+    const schedule = await releaser.connect(reserveAccount).releaseSchedules(scheduleId)
+    expect(schedule.initialReleasePortionInBips).to.equal(10000)
+  })
+
+  it('initial release amount cannot exceed 100% (100 00 bips', async function () {
+    let error
+    try {
+      await releaser.connect(reserveAccount).createReleaseSchedule(1, 0, 10001, 1)
+    } catch (e) {
+      error = e
+    }
+
+    expect(error.message).to.match(/VM Exception.*Cannot have an initial release in excess of 100%/)
   })
 })

@@ -15,6 +15,10 @@ const advanceTime = async (days) => {
   })
 }
 
+function days (numDays) {
+  return 60 * 60 * 24 * numDays
+}
+
 async function currentTimestamp (offsetInSeconds = 0) {
   return (await hre.ethers.provider.getBlock()).timestamp + offsetInSeconds
 }
@@ -24,11 +28,11 @@ async function exactlyMoreThanOneDayAgo () {
 }
 
 describe('TokenReleaseScheduler timelock balances', async function () {
-  let releaser, token, reserveAccount, recipient
+  let releaser, token, reserveAccount, recipient, accounts
   const decimals = 10
   const totalSupply = 8e9
   beforeEach(async () => {
-    const accounts = await hre.ethers.getSigners()
+    accounts = await hre.ethers.getSigners()
 
     reserveAccount = accounts[0]
     recipient = accounts[1]
@@ -51,14 +55,6 @@ describe('TokenReleaseScheduler timelock balances', async function () {
       100 // low minimum to force rounding issues
     )
   })
-
-  // TODO: Use case tests
-  /*
-        // 10% immediately and remaining amount over 4 periods of 90 days
-        // 50% after 360 day delay and remaining amont over 4 periods of 90 days
-        // 30 day delay and then vesting every second for 360 days
-        // commencement 6 months ago with 12 periods of 1 month
-     */
 
   it('timelock creation with immediately unlocked tokens', async () => {
     const totalRecipientAmount = 100
@@ -246,5 +242,67 @@ describe('TokenReleaseScheduler timelock balances', async function () {
 
     expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 1))
       .to.equal('8')
+  })
+
+  it('creating a timelock increases the totalSupply and transferring decreases it', async () => {
+    expect(await releaser.totalSupply()).to.equal('0')
+
+    const releaseCount = 2
+    const firstDelay = 0
+    const firstBatchBips = 5000
+    const commence = await currentTimestamp()
+    const periodBetweenReleases = days(4)
+    const recipientAccount = accounts[2].address
+
+    await token.connect(reserveAccount).approve(releaser.address, 200)
+
+    await releaser.connect(reserveAccount).createReleaseSchedule(
+      releaseCount,
+      firstDelay,
+      firstBatchBips,
+      periodBetweenReleases
+    )
+
+    // half of the 100 tokens from each release are available
+    await releaser.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      100,
+      commence,
+      0 // scheduleId
+    )
+    expect(await releaser.totalSupply()).to.equal('100')
+
+    await releaser.connect(reserveAccount).createReleaseSchedule(
+      releaseCount,
+      firstDelay,
+      firstBatchBips,
+      periodBetweenReleases
+    )
+    await releaser.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      100,
+      commence,
+      1 // scheduleId
+    )
+    expect(await releaser.totalSupply()).to.equal('200')
+
+    // transfer 50 from the first timelock and 1 from the second timelock
+    await releaser.connect(recipient).transfer(recipientAccount, 51)
+    expect(await releaser.totalSupply()).to.equal('149')
+
+    // transfer 50 from the first timelock and 1 from the second timelock
+    await releaser.connect(recipient).transfer(recipientAccount, 49)
+    expect(await releaser.totalSupply()).to.equal('100')
+
+    // unlock the remaining tokens and check the state
+    advanceTime(4)
+
+    // transfer 50 from the second timelock and 1 from the second timelock
+    await releaser.connect(recipient).transfer(recipientAccount, 51)
+    expect(await releaser.totalSupply()).to.equal('49')
+
+    // transfer 50 from the second timelock and 1 from the second timelock
+    await releaser.connect(recipient).transfer(recipientAccount, 49)
+    expect(await releaser.totalSupply()).to.equal('0')
   })
 })

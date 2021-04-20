@@ -27,6 +27,7 @@ describe('TokenReleaseScheduler release schedule of', async function () {
   let releaser, token, reserveAccount, recipient
   const decimals = 10
   const totalSupply = 8e9
+
   beforeEach(async () => {
     const accounts = await hre.ethers.getSigners()
 
@@ -104,16 +105,15 @@ describe('TokenReleaseScheduler release schedule of', async function () {
     expect(await releaser.balanceOf(recipient.address))
       .to.equal('300')
 
-    const schedule1 = await releaser.releaseSchedulesOf(recipient.address, 0)
+    const schedule1 = await releaser.viewTimelock(recipient.address, 0)
     expect(schedule1.scheduleId).to.equal(0)
     expect(schedule1.commencementTimestamp).to.equal(commence)
-    expect(schedule1.releasesDone).to.equal(0)
-    expect(schedule1.tokensRemaining).to.equal(100)
+    expect(schedule1.tokensTransferred).to.equal(0)
+    expect(schedule1.totalAmount).to.equal(100)
 
-    const schedule2 = await releaser.releaseSchedulesOf(recipient.address, 1)
+    const schedule2 = await releaser.viewTimelock(recipient.address, 1)
     expect(schedule2.scheduleId).to.equal(1)
-    expect(schedule2.commencementTimestamp).to.equal(commence)
-    expect(schedule2.releasesDone).to.equal(0)
-    expect(schedule2.tokensRemaining).to.equal(200)
+    expect(schedule2.tokensTransferred).to.equal(0)
+    expect(schedule2.totalAmount).to.equal(200)
   })
 })
