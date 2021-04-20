@@ -4,17 +4,6 @@ const { expect } = chai
 const { solidity } = require('ethereum-waffle')
 chai.use(solidity)
 
-// const advanceTime = async (days) => {
-//   await hre.network.provider.request({
-//     method: 'evm_increaseTime',
-//     params: [days * 3600 * 24]
-//   })
-//   await hre.network.provider.request({
-//     method: 'evm_mine',
-//     params: []
-//   })
-// }
-
 describe('TokenReleaseScheduler create release schedule', async function () {
   let releaser, token, reserveAccount
   const decimals = 10

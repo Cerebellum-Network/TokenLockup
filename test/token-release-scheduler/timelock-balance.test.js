@@ -52,14 +52,6 @@ describe('TokenReleaseScheduler timelock balances', async function () {
     )
   })
 
-  // TODO: Use case tests
-  /*
-        // 10% immediately and remaining amount over 4 periods of 90 days
-        // 50% after 360 day delay and remaining amont over 4 periods of 90 days
-        // 30 day delay and then vesting every second for 360 days
-        // commencement 6 months ago with 12 periods of 1 month
-     */
-
   it('timelock creation with immediately unlocked tokens', async () => {
     const totalRecipientAmount = 100
     const totalBatches = 3
