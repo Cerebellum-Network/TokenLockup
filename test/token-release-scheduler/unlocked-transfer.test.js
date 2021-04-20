@@ -120,6 +120,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
 
     await token.connect(reserveAccount).approve(releaser.address, 200)
 
+    expect(await releaser.totalSupply()).to.equal('0')
     await releaser.connect(reserveAccount).createReleaseSchedule(
       releaseCount,
       firstDelay,
@@ -134,6 +135,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       commence,
       0 // scheduleId
     )
+    expect(await releaser.totalSupply()).to.equal('100')
 
     await releaser.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
@@ -141,6 +143,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       commence,
       0 // scheduleId
     )
+    expect(await releaser.totalSupply()).to.equal('200')
 
     // check the starting state is as expected
     expect(await token.balanceOf(releaser.address)).to.equal(200)

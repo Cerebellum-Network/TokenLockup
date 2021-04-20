@@ -135,9 +135,6 @@ contract TokenReleaseScheduler {
         );
     }
 
-    // TODO: totalSupply function
-    // function totalSupply() external view returns (uint);
-
 
     function viewTimelock(address who, uint256 index) public view
     returns (Timelock memory timelock) {
@@ -188,6 +185,10 @@ contract TokenReleaseScheduler {
 
     function symbol() public view returns (string memory) {
         return _symbol;
+    }
+
+    function totalSupply() external view returns (uint) {
+        return token.balanceOf(address(this));
     }
 
     function burn(uint timelockIndex, uint confirmationIdPlusOne) public {
