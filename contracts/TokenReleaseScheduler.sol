@@ -29,7 +29,7 @@ contract TokenReleaseScheduler {
 
     mapping(address => Timelock[]) public timelocks;
     mapping(address => uint) internal _totalTokensUnlocked;
-    mapping (address => mapping (address => uint)) internal _allowances;
+    mapping(address => mapping(address => uint)) internal _allowances;
 
     event Approval(address indexed from, address indexed spender, uint amount);
     event ScheduleBurned(address indexed from, uint timelockId);
@@ -59,8 +59,8 @@ contract TokenReleaseScheduler {
         uint initialReleasePortionInBips, // in 100ths of 1%
         uint periodBetweenReleasesInSeconds
     )
-        external
-        returns
+    external
+    returns
     (
         uint unlockScheduleId
     ) {
@@ -74,11 +74,11 @@ contract TokenReleaseScheduler {
         }
 
         releaseSchedules.push(ReleaseSchedule(
-            releaseCount,
-            delayUntilFirstReleaseInSeconds,
-            initialReleasePortionInBips,
-            periodBetweenReleasesInSeconds
-        ));
+                releaseCount,
+                delayUntilFirstReleaseInSeconds,
+                initialReleasePortionInBips,
+                periodBetweenReleasesInSeconds
+            ));
 
         // returning the index of the newly added schedule
         return releaseSchedules.length - 1;
@@ -107,14 +107,14 @@ contract TokenReleaseScheduler {
 
 
     function lockedBalanceOf(address who) public view returns (uint amount) {
-        for (uint i=0; i<timelocks[who].length; i++) {
-            amount += timelocks[who][i].tokensRemaining - unlockedBalanceOfTimelock(who,i);
+        for (uint i = 0; i < timelocks[who].length; i++) {
+            amount += timelocks[who][i].tokensRemaining - unlockedBalanceOfTimelock(who, i);
         }
     }
 
     function unlockedBalanceOf(address who) public view returns (uint amount) {
-        for (uint i=0; i<timelocks[who].length; i++) {
-            amount += unlockedBalanceOfTimelock(who,i);
+        for (uint i = 0; i < timelocks[who].length; i++) {
+            amount += unlockedBalanceOfTimelock(who, i);
         }
     }
 
@@ -132,7 +132,7 @@ contract TokenReleaseScheduler {
 
 
     function releaseSchedulesOf(address who, uint256 index) public view
-        returns (Timelock memory timelock) {
+    returns (Timelock memory timelock) {
         return timelocks[who][index];
     }
 
@@ -186,7 +186,8 @@ contract TokenReleaseScheduler {
     /*
     */
     function burn(uint scheduleId, uint confirmationIdPlusOne) public {
-        require(scheduleId < timelocks[msg.sender].length, "No such schedule"); // this also protects from overflow below
+        require(scheduleId < timelocks[msg.sender].length, "No such schedule");
+        // this also protects from overflow below
         require(confirmationIdPlusOne == scheduleId + 1, "A burn wasn't confirmed");
 
         // actually burning the remaining tokens from the unlock
@@ -225,36 +226,36 @@ contract TokenReleaseScheduler {
     }
 
     function _unlockAllReleases(address recipient) internal {
-        for (uint i=0; i<timelocks[recipient].length; i++) {
+        for (uint i = 0; i < timelocks[recipient].length; i++) {
             _unlockRelease(recipient, i);
         }
     }
 
-    function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, uint scheduleId) public view returns(uint unlocked) {
+    function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, uint scheduleId) public view returns (uint unlocked) {
         uint secondsElapsed = currentTimestamp - commencedTimestamp;
 
         // return the full amount if the total lockup period has expired
         // since all unlocked amounts in each period are truncated after the smallest unit
         // unlocking the full amount also unlocks any remainder amounts in the final unlock period
         // this is done first to reduce computation
-        if(secondsElapsed >= releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds +
-            (releaseSchedules[scheduleId].periodBetweenReleasesInSeconds * (releaseSchedules[scheduleId].releaseCount - 1))) {
+        if (secondsElapsed >= releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds +
+        (releaseSchedules[scheduleId].periodBetweenReleasesInSeconds * (releaseSchedules[scheduleId].releaseCount - 1))) {
             return amount;
         }
 
         // unlock the initial release if the delay has elapsed
-        if(secondsElapsed >= releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds){
+        if (secondsElapsed >= releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds) {
             unlocked += (amount * releaseSchedules[scheduleId].initialReleasePortionInBips) / 1e4;
 
             // if at least one period after the delay has passed
-            if(secondsElapsed - releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds
+            if (secondsElapsed - releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds
                 >= releaseSchedules[scheduleId].periodBetweenReleasesInSeconds) {
 
                 // calculate the number of additional periods that have passed (not including the initial release)
                 // this discards any remainders (ie it truncates / rounds down)
                 uint additionalPeriods =
-                    (secondsElapsed - releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds) /
-                    releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
+                (secondsElapsed - releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds) /
+                releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
 
                 // unlocked includes the number of additionalPeriods past times the evenly distributed remaining amount
                 unlocked += additionalPeriods * ((amount - unlocked) / (releaseSchedules[scheduleId].releaseCount - 1));
