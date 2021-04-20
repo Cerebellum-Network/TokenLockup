@@ -22,8 +22,9 @@ contract TokenReleaseScheduler {
     struct Timelock {
         uint scheduleId;
         uint commencementTimestamp;
-        uint releasesDone;
+        uint releasesDone; // defaults to 0 unlocks finished
         uint tokensRemaining;
+        uint totalAmount;
     }
 
     mapping(address => Timelock[]) public timelocks;
@@ -95,14 +96,13 @@ contract TokenReleaseScheduler {
         // It will revert via ERC20 implementation if there's no allowance
         token.transferFrom(msg.sender, address(this), amount);
 
-        timelocks[to].push(
-            Timelock(
-                scheduleId,
-                commencementDate,
-                0, // 0 unlocks finished
-                amount
-            )
-        );
+        Timelock memory timelock;
+        timelock.scheduleId = scheduleId;
+        timelock.commencementTimestamp = commencementDate;
+        timelock.tokensRemaining = amount;
+        timelock.totalAmount = amount;
+
+        timelocks[to].push(timelock);
     }
 
 
@@ -118,8 +118,9 @@ contract TokenReleaseScheduler {
         }
     }
 
-    function lockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint unlock) {
-        return timelocks[who][timelockIndex].tokensRemaining - unlockedBalanceOfTimelock(who, timelockIndex);
+    function lockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint locked) {
+        (, uint _unlocked) = _calculateReleaseUnlock(who, timelockIndex);
+        return timelocks[who][timelockIndex].tokensRemaining - _unlocked;
     }
 
     function unlockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint unlock) {
