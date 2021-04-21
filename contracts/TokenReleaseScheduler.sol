@@ -217,8 +217,11 @@ contract TokenReleaseScheduler {
 
         // transfer from unlocked tokens
         for (uint i = 0; i < timelocks[from].length; i++) {
-            // if the remainingTransfer is more than the unlocked balance use it all
-            if (remainingTransfer > unlockedBalanceOfTimelock(from, i)) {
+            // if the timelock has no value left
+            if(timelocks[from][i].tokensTransferred == timelocks[from][i].totalAmount) {
+                continue;
+            } else if (remainingTransfer > unlockedBalanceOfTimelock(from, i)) {
+                // if the remainingTransfer is more than the unlocked balance use it all
                 remainingTransfer -= unlockedBalanceOfTimelock(from, i);
                 timelocks[from][i].tokensTransferred += unlockedBalanceOfTimelock(from, i);
                 // if the remainingTransfer is less than or equal to the unlocked balance
