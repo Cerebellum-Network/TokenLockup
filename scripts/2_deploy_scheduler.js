@@ -10,6 +10,8 @@ const fs = require('fs')
 console.log('Deploy Network: ', hre.network.name)
 console.log(config.token)
 
+throw 'needs contract address'
+
 async function main () {
   // Hardhat always runs the compile task when running scripts with its command
   // line interface.
@@ -18,39 +20,28 @@ async function main () {
   // manually to make sure everything is compiled
   // await hre.run('compile');
 
-  // We get the contract to deploy
-  const Token = await hre.ethers.getContractFactory('Token')
-  const token = await Token.deploy(
-    config.token.name,
-    config.token.symbol,
-    config.token.decimals,
-    config.token.totalSupply,
-    config.token.mintAddresses,
-    config.token.mintAmounts
-  )
-  console.log('Deployed token at: ', token.address)
-
+  // token release scheduler deployment
   const TokenRelease = await hre.ethers.getContractFactory('TokenReleaseScheduler')
-  const release = await TokenRelease.deploy(
+  const tokenReleaseSchedulerArgs = [
     token.address,
     config.token.name + ' Lockup',
     config.token.symbol + ' Lockup',
-    10 * 1e10,
+    10 * 1e10
+  ]
+  const release = await TokenRelease.deploy(
+    ...tokenReleaseSchedulerArgs,
     {
       gasLimit: 4000000
-    }
-  )
+    })
   console.log('Deployed release at: ', release.address)
 
-  fs.writeFileSync(
-    hre.network.name + 'Deployment.json',
-    JSON.stringify(
-      {
-        token: token.address,
-        release: release.address
-      }
-    )
-  )
+  await release.deployTransaction.wait(5)
+
+  // upload the contracts Etherscan for verification
+  await hre.run('verify:verify', {
+    address: release.address,
+    constructorArguments: tokenReleaseSchedulerArgs,
+  })
 }
 
 // We recommend this pattern to be able to use async/await everywhere
