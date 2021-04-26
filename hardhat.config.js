@@ -30,12 +30,12 @@ module.exports = {
   networks: {
     hardhat: {
       token: {
-        name: 'Token Test XYZ',
+        name: 'Xavier Yolo Zeta',
         symbol: 'XYZ',
         decimals: 10,
-        totalSupply: 100,
-        mintAddresses: ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'],
-        mintAmounts: [100]
+        totalSupply: tenBillionWithTenDecimalPrecision, // 10B + 10 decimals
+        mintAddresses: ['0xdFA017425c938c13ef362544D2662230cC7668eB', '0x421C655a9A40930c10eaD2b479ad529342973E68'],
+        mintAmounts: [walletAmount1, wallet2Amount2]
       },
       lockup: {
         minReleaseScheduleAmount: 10 * 1e10 // 10 tokens with 10 decimals

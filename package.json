@@ -10,8 +10,9 @@
     "fix": "npx standard --fix",
     "dry-test": "npx hardhat test",
     "gas-cost": "npx hardhat test",
-    "deploy-token-rinkeby": "npx hardhat clean && npx hardhat run scripts/1_deploy-token.js --network rinkeby",
-    "deploy-token-kovan": "npx hardhat clean && npx hardhat run scripts/1_deploy-token.js --network rinkeby"
+    "deploy-token": "npx hardhat clean && npx hardhat run scripts/1_deploy-token.js && npx hardhat run scripts/2_publish_contract_definition_to_etherscan.js",
+    "deploy-token-rinkeby": "HARDHAT_NETWORK=rinkeby npm run deploy-token",
+    "deploy-token-kovan": "HARDHAT_NETWORK=kovan npm run deploy-token"
   },
   "repository": {
     "type": "git",

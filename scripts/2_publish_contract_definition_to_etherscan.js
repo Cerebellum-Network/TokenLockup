@@ -7,12 +7,14 @@
 const hre = require('hardhat')
 const config = hre.network.config
 const fs = require('fs')
+const deploymentParamsLog = 'deployment.json'
 console.log('Deploy Network: ', hre.network.name)
-console.log(config.token)
 
-throw 'needs contract address'
 
+// Publishing contract details to Etherscan is a separate script
+// because Etherscan intermittenly refuses the API request
 async function main () {
+
   // Hardhat always runs the compile task when running scripts with its command
   // line interface.
   //
@@ -20,27 +22,23 @@ async function main () {
   // manually to make sure everything is compiled
   // await hre.run('compile');
 
-  // token release scheduler deployment
-  const TokenRelease = await hre.ethers.getContractFactory('TokenReleaseScheduler')
-  const tokenReleaseSchedulerArgs = [
-    token.address,
-    config.token.name + ' Lockup',
-    config.token.symbol + ' Lockup',
-    10 * 1e10
-  ]
-  const release = await TokenRelease.deploy(
-    ...tokenReleaseSchedulerArgs,
-    {
-      gasLimit: 4000000
-    })
-  console.log('Deployed release at: ', release.address)
 
-  await release.deployTransaction.wait(5)
 
-  // upload the contracts Etherscan for verification
+  // load deployment info for the current environment
+
+  const deploymentInfo = JSON.parse(fs.readFileSync('./deployment.json'))[hre.network.name.toString()]
+  console.log(deploymentInfo)
+  const transaction = deploymentInfo.token.transaction
+  // wait for the deployed contract to be confirmed enough times to successfully post the definition to Etherscan
+  console.log("checking 5 confirmations completed")
+  await ethers.provider.waitForTransaction(deploymentInfo.token.transaction, 5)
+  console.log("5 confirmations have been completed")
+
+  // // upload the contracts Etherscan for verification
+  console.log("uploading the contract definition to Etherscan")
   await hre.run('verify:verify', {
-    address: release.address,
-    constructorArguments: tokenReleaseSchedulerArgs,
+    address: deploymentInfo.token.address,
+    constructorArguments: deploymentInfo.token.args,
   })
 }
 

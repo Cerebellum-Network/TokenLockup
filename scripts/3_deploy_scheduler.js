@@ -7,8 +7,10 @@
 const hre = require('hardhat')
 const config = hre.network.config
 const fs = require('fs')
-const deploymentParamsLog = 'deployment.json'
 console.log('Deploy Network: ', hre.network.name)
+console.log(config.token)
+
+throw 'needs contract address'
 
 async function main () {
   // Hardhat always runs the compile task when running scripts with its command
@@ -18,33 +20,41 @@ async function main () {
   // manually to make sure everything is compiled
   // await hre.run('compile');
 
-  // token deployment
-  const Token = await hre.ethers.getContractFactory('Token')
-  const tokenArgs = [
-    config.token.name,
-    config.token.symbol,
-    config.token.decimals.toString(),
-    config.token.totalSupply.toString(),
-    config.token.mintAddresses,
-    config.token.mintAmounts.map(a => a.toString())
+  // token release scheduler deployment
+  const TokenRelease = await hre.ethers.getContractFactory('TokenReleaseScheduler')
+  const tokenReleaseSchedulerArgs = [
+    token.address,
+    config.token.name + ' Lockup',
+    config.token.symbol + ' Lockup',
+    10 * 1e10
   ]
-  console.log(tokenArgs)
-  const token = await Token.deploy(...tokenArgs)
-  console.log('Deployed token at: ', token.address)
+  const release = await TokenRelease.deploy(
+    ...tokenReleaseSchedulerArgs,
+    {
+      gasLimit: 4000000
+    })
+  console.log('Deployed release at: ', release.address)
 
   fs.writeFileSync(
-    deploymentParamsLog,
+    'deployment.json',
     JSON.stringify({
       [hre.network.name.toString()]: {
-        'token': {
-          'args': tokenArgs,
-          'transaction': token.deployTransaction.hash,
-          'address': token.address,
+        'tokenLockup': {
+          'transaction': release.deployTransaction,
+          'release': release.address
         }
       }
     })
   )
-  console.log('Wrote token deployment config to: ', deploymentParamsLog)
+
+  await release.deployTransaction.wait(5)
+  console.log('5 confirmations completed')
+
+  // upload the contracts Etherscan for verification
+  await hre.run('verify:verify', {
+    address: release.address,
+    constructorArguments: tokenReleaseSchedulerArgs,
+  })
 }
 
 // We recommend this pattern to be able to use async/await everywhere
