@@ -1,7 +1,7 @@
 require('@nomiclabs/hardhat-waffle')
 require('solidity-coverage')
 require('hardhat-gas-reporter')
-require("@nomiclabs/hardhat-etherscan")
+require('@nomiclabs/hardhat-etherscan')
 require('dotenv').config({ path: '.env' })
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -33,52 +33,59 @@ module.exports = {
         name: 'Xavier Yolo Zeta',
         symbol: 'XYZ',
         decimals: 10,
-        totalSupply: tenBillionWithTenDecimalPrecision, // 10B + 10 decimals
+        totalSupply: tenBillionWithTenDecimalPrecision.toString(), // 10B + 10 decimals
         mintAddresses: ['0xdFA017425c938c13ef362544D2662230cC7668eB', '0x421C655a9A40930c10eaD2b479ad529342973E68'],
-        mintAmounts: [walletAmount1, wallet2Amount2]
+        mintAmounts: [walletAmount1.toString(), wallet2Amount2.toString()]
       },
       lockup: {
         minReleaseScheduleAmount: 10 * 1e10 // 10 tokens with 10 decimals
       }
-    },
-    rinkeby: {
-      token: {
-        name: 'Xavier Yolo Zeta',
-        symbol: 'XYZ',
-        decimals: 10,
-        totalSupply: tenBillionWithTenDecimalPrecision, // 10B + 10 decimals
-        mintAddresses: ['0xdFA017425c938c13ef362544D2662230cC7668eB', '0x421C655a9A40930c10eaD2b479ad529342973E68'],
-        mintAmounts: [walletAmount1, wallet2Amount2]
-      },
-      lockup: {
-        minReleaseScheduleAmount: 10 * 1e10 // 10 tokens with 10 decimals
-      },
-      url: 'https://eth-rinkeby.alchemyapi.io/v2/8ohf9ggpgkO1yfBvfX0sGIyGeVkEEt0T',
-      accounts: {
-        mnemonic: process.env.RINKEBY
-      },
-      gas: 4 * 1e6
     },
     kovan: {
       token: {
         name: 'Xavier Yolo Zeta',
         symbol: 'XYZ',
         decimals: 10,
-        totalSupply: tenBillionWithTenDecimalPrecision, // 10B + 10 decimals
+        totalSupply: tenBillionWithTenDecimalPrecision.toString(), // 10B + 10 decimals
         mintAddresses: ['0xdFA017425c938c13ef362544D2662230cC7668eB', '0x421C655a9A40930c10eaD2b479ad529342973E68'],
-        mintAmounts: [walletAmount1, wallet2Amount2]
+        mintAmounts: [walletAmount1.toString(), wallet2Amount2.toString()]
       },
       lockup: {
         minReleaseScheduleAmount: 10 * 1e10 // 10 tokens with 10 decimals
       },
-      url: 'https://eth-rinkeby.alchemyapi.io/v2/8ohf9ggpgkO1yfBvfX0sGIyGeVkEEt0T',
+      url: process.env.KOVAN_NETWORK_URL,
       accounts: {
         mnemonic: process.env.KOVAN
       },
       gas: 4 * 1e6
+    },
+    mainnet: {
+      token: {
+        name: 'Xavier Yolo Zeta',
+        symbol: 'XYZ',
+        decimals: 10,
+        totalSupply: tenBillionWithTenDecimalPrecision.toString(), // 10B + 10 decimals
+        mintAddresses: ['0xdFA017425c938c13ef362544D2662230cC7668eB', '0x421C655a9A40930c10eaD2b479ad529342973E68'],
+        mintAmounts: [walletAmount1.toString(), wallet2Amount2.toString()]
+      },
+      lockup: {
+        minReleaseScheduleAmount: 10 * 1e10 // 10 tokens with 10 decimals
+      },
+      url: process.env.MAINNET_NETWORK_URL,
+      accounts: {
+        mnemonic: process.env.MAINNET
+      }
     }
   },
-  solidity: '0.8.3',
+  solidity:     {
+    version: '0.8.3',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1000
+      }
+    }
+  },
   gasReporter: {
     coinmarketcap: process.env.COIN_MARKET_CAP_API,
     currency: 'USD',

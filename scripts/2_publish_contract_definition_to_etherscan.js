@@ -5,16 +5,13 @@
 // Runtime Environment's members available in the global scope.
 
 const hre = require('hardhat')
-const config = hre.network.config
 const fs = require('fs')
-const deploymentParamsLog = 'deployment.json'
+const deploymentParamsLog = './deployment.json'
 console.log('Deploy Network: ', hre.network.name)
-
 
 // Publishing contract details to Etherscan is a separate script
 // because Etherscan intermittenly refuses the API request
 async function main () {
-
   // Hardhat always runs the compile task when running scripts with its command
   // line interface.
   //
@@ -22,23 +19,21 @@ async function main () {
   // manually to make sure everything is compiled
   // await hre.run('compile');
 
-
-
   // load deployment info for the current environment
 
-  const deploymentInfo = JSON.parse(fs.readFileSync('./deployment.json'))[hre.network.name.toString()]
+  const deploymentInfo = JSON.parse(fs.readFileSync(deploymentParamsLog))[hre.network.name.toString()]
   console.log(deploymentInfo)
-  const transaction = deploymentInfo.token.transaction
+
   // wait for the deployed contract to be confirmed enough times to successfully post the definition to Etherscan
-  console.log("checking 5 confirmations completed")
+  console.log('checking 5 confirmations completed')
   await ethers.provider.waitForTransaction(deploymentInfo.token.transaction, 5)
-  console.log("5 confirmations have been completed")
+  console.log('5 confirmations have been completed')
 
   // // upload the contracts Etherscan for verification
-  console.log("uploading the contract definition to Etherscan")
+  console.log('uploading the contract definition to Etherscan')
   await hre.run('verify:verify', {
     address: deploymentInfo.token.address,
-    constructorArguments: deploymentInfo.token.args,
+    constructorArguments: deploymentInfo.token.args
   })
 }
 

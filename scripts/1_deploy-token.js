@@ -8,7 +8,6 @@ const hre = require('hardhat')
 const config = hre.network.config
 const fs = require('fs')
 const deploymentParamsLog = 'deployment.json'
-console.log('Deploy Network: ', hre.network.name)
 
 async function main () {
   // Hardhat always runs the compile task when running scripts with its command
@@ -20,6 +19,8 @@ async function main () {
 
   // token deployment
   const Token = await hre.ethers.getContractFactory('Token')
+  console.log('Deploy Network: ', await Token.signer.provider.getNetwork())
+
   const tokenArgs = [
     config.token.name,
     config.token.symbol,
@@ -36,10 +37,10 @@ async function main () {
     deploymentParamsLog,
     JSON.stringify({
       [hre.network.name.toString()]: {
-        'token': {
-          'args': tokenArgs,
-          'transaction': token.deployTransaction.hash,
-          'address': token.address,
+        token: {
+          args: tokenArgs,
+          transaction: token.deployTransaction.hash,
+          address: token.address
         }
       }
     })

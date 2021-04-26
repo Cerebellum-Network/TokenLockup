@@ -4,13 +4,13 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 
+/* pending lockup contract completion
+
 const hre = require('hardhat')
 const config = hre.network.config
 const fs = require('fs')
 console.log('Deploy Network: ', hre.network.name)
 console.log(config.token)
-
-throw 'needs contract address'
 
 async function main () {
   // Hardhat always runs the compile task when running scripts with its command
@@ -39,9 +39,9 @@ async function main () {
     'deployment.json',
     JSON.stringify({
       [hre.network.name.toString()]: {
-        'tokenLockup': {
-          'transaction': release.deployTransaction,
-          'release': release.address
+        tokenLockup: {
+          transaction: release.deployTransaction,
+          release: release.address
         }
       }
     })
@@ -53,7 +53,7 @@ async function main () {
   // upload the contracts Etherscan for verification
   await hre.run('verify:verify', {
     address: release.address,
-    constructorArguments: tokenReleaseSchedulerArgs,
+    constructorArguments: tokenReleaseSchedulerArgs
   })
 }
 
@@ -65,3 +65,4 @@ main()
     console.error(error)
     process.exit(1)
   })
+*/
