@@ -239,6 +239,13 @@ contract TokenReleaseScheduler {
         return true;
     }
 
+    function transferTimelock(address to, uint value, uint timelockId) public returns (bool) {
+        require(unlockedBalanceOfTimelock(msg.sender, timelockId) >= value, "Not enough unlocked tokens to transfer from this timelock");
+        timelocks[msg.sender][timelockId].tokensTransferred += value;
+        token.transfer(to, value);
+        return true; // TODO: test return value
+    }
+
     function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, uint scheduleId) public view returns (uint unlocked) {
         uint secondsElapsed = currentTimestamp - commencedTimestamp;
 
