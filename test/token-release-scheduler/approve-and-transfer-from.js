@@ -105,6 +105,6 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     } catch (e) {
       errorMessage = e.message
     }
-    expect(errorMessage).to.match(/VM Exception.*revert Not enough unlocked tokens to transfer/)
+    expect(errorMessage).to.match(/Not enough unlocked/)
   })
 })

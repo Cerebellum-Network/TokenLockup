@@ -12,7 +12,7 @@ async function exactlyMoreThanOneDayAgo () {
   return await currentTimestamp(-3601)
 }
 
-describe('TokenReleaseScheduler unlock scheduling', async function () {
+describe('TokenReleaseScheduler unlock scheduling for a specific timelock', async function () {
   let releaser, token, reserveAccount, recipient, accounts
   const decimals = 10
   const totalSupply = 8e9
@@ -114,7 +114,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       errorMessage = e.message
     }
 
-    expect(errorMessage).to.match(/Not enough unlocked tokens to transfer from this timelock/)
+    expect(errorMessage).to.match(/Not enough unlocked/)
 
     const balance = await token.connect(reserveAccount).balanceOf(accounts[2].address)
     expect(balance).to.equal(0)
@@ -241,7 +241,7 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     } catch (e) {
       errorMessage = e.message
     }
-    expect(errorMessage).to.match(/Not enough unlocked tokens to transfer from this timelock/)
+    expect(errorMessage).to.match(/Not enough unlocked/)
 
     const balance = await token.connect(reserveAccount).balanceOf(accounts[2].address)
 

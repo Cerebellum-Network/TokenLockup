@@ -48,7 +48,7 @@ describe('TokenReleaseScheduler create release schedule', async function () {
       error = e
     }
 
-    expect(error.message).to.match(/VM Exception.*Cannot create an empty schedule/)
+    expect(error.message).to.match(/revert < 1 release/)
   })
 
   it('if there is one release it must release all tokens', async function () {
@@ -78,6 +78,6 @@ describe('TokenReleaseScheduler create release schedule', async function () {
       error = e
     }
 
-    expect(error.message).to.match(/VM Exception.*Cannot have an initial release in excess of 100%/)
+    expect(error.message).to.match(/Initial release exceeded 100%/)
   })
 })

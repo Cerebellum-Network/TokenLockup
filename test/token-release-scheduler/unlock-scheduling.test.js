@@ -143,6 +143,6 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       errorMessage = e.message
     }
 
-    expect(errorMessage).to.match(/amount scheduled for release must be >= the number of release periods/)
+    expect(errorMessage).to.match(/< 1 token per release too low/)
   })
 })

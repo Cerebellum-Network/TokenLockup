@@ -32,7 +32,6 @@ contract TokenReleaseScheduler {
 
     event Approval(address indexed from, address indexed spender, uint amount);
     event ScheduleBurned(address indexed from, uint timelockId);
-    event TokensUnlocked(address indexed recipient, uint amount);
 
     /*  The constructor that specifies the token, name and symbol
         The name should specify that it is an unlock contract
@@ -63,10 +62,10 @@ contract TokenReleaseScheduler {
     (
         uint unlockScheduleId
     ) {
-        require(releaseCount >= 1, "Cannot create an empty schedule");
-        require(initialReleasePortionInBips <= 1e4, "Cannot have an initial release in excess of 100%");
+        require(releaseCount >= 1, "< 1 release");
+        require(initialReleasePortionInBips <= 1e4, "Initial release exceeded 100%");
         if (releaseCount > 1) {
-            require(periodBetweenReleasesInSeconds > 0, "Cannot have multiple periods with 0 time distance");
+            require(periodBetweenReleasesInSeconds > 0, "Release periods < 1");
         }
         if (releaseCount == 1) {
             require(initialReleasePortionInBips == 1e4, "If there is only one batch, initial release must be 100%");
@@ -89,9 +88,9 @@ contract TokenReleaseScheduler {
         uint commencementTimestamp, // unix timestamp
         uint scheduleId
     ) external {
-        require(amount >= minReleaseScheduleAmount, "Cannot fund a release schedule with this few tokens");
-        require(scheduleId < releaseSchedules.length, "Schedule id is out of bounds");
-        require(amount >= releaseSchedules[scheduleId].releaseCount, "amount scheduled for release must be >= the number of release periods");
+        require(amount >= minReleaseScheduleAmount, "Amount too low");
+        require(scheduleId < releaseSchedules.length, "Schedule id out of bounds");
+        require(amount >= releaseSchedules[scheduleId].releaseCount, "< 1 token per release too low");
 
         // It will revert via ERC20 implementation if there's no allowance
         token.transferFrom(msg.sender, address(this), amount);
@@ -136,7 +135,6 @@ contract TokenReleaseScheduler {
         );
     }
 
-
     function viewTimelock(address who, uint256 index) public view
     returns (Timelock memory timelock) {
         return timelocks[who][index];
@@ -176,7 +174,7 @@ contract TokenReleaseScheduler {
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
     function decreaseAllowance(address spender, uint subtractedValue) external returns (bool) {
         uint currentAllowance = _allowances[msg.sender][spender];
-        require(currentAllowance >= subtractedValue, "Decreased allowance below zero");
+        require(currentAllowance >= subtractedValue, "Insufficient allowance");
         _approve(msg.sender, spender, _allowances[msg.sender][spender] - subtractedValue);
         return true;
     }
@@ -211,7 +209,7 @@ contract TokenReleaseScheduler {
     }
 
     function _transfer(address from, address to, uint value) internal returns (bool) {
-        require(unlockedBalanceOf(from) >= value, "Not enough unlocked tokens to transfer");
+        require(unlockedBalanceOf(from) >= value, "Not enough unlocked");
 
         uint remainingTransfer = value;
 
@@ -240,7 +238,7 @@ contract TokenReleaseScheduler {
     }
 
     function transferTimelock(address to, uint value, uint timelockId) public returns (bool) {
-        require(unlockedBalanceOfTimelock(msg.sender, timelockId) >= value, "Not enough unlocked tokens to transfer from this timelock");
+        require(unlockedBalanceOfTimelock(msg.sender, timelockId) >= value, "Not enough unlocked");
         timelocks[msg.sender][timelockId].tokensTransferred += value;
         token.transfer(to, value);
         return true; // TODO: test return value
@@ -290,8 +288,8 @@ contract TokenReleaseScheduler {
 
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
     function _approve(address owner, address spender, uint amount) internal {
-        require(owner != address(0), "Approve from the zero address");
-        require(spender != address(0), "Approve to the zero address");
+        require(owner != address(0));
+        require(spender != address(0));
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
