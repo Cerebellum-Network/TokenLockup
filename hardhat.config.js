@@ -77,7 +77,7 @@ module.exports = {
       }
     }
   },
-  solidity:     {
+  solidity: {
     version: '0.8.3',
     settings: {
       optimizer: {
