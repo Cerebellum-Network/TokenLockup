@@ -22,16 +22,15 @@ describe('BatchTransfer', function () {
     )
 
     const BatchTransfer = await hre.ethers.getContractFactory('BatchTransfer')
-    batchTransfer = await BatchTransfer.deploy(token.address)
-  })
-
-  it('has an ERC20 token', async function () {
-    expect(await batchTransfer.token()).to.equal(token.address)
+    batchTransfer = await BatchTransfer.deploy()
   })
 
   it('can transfer', async function () {
     await token.connect(reserveAccount).approve(batchTransfer.address, 6)
-    await batchTransfer.connect(reserveAccount).batchTransfer([accounts[1].address, accounts[2].address, accounts[3].address], [1, 2, 3])
+    await batchTransfer.connect(reserveAccount).batchTransfer(
+      token.address,
+      [accounts[1].address, accounts[2].address, accounts[3].address],
+      [1, 2, 3])
 
     expect(await token.balanceOf(accounts[1].address)).to.equal(1)
     expect(await token.balanceOf(accounts[2].address)).to.equal(2)
@@ -46,7 +45,9 @@ describe('BatchTransfer', function () {
     let errorMessage
     try {
       await batchTransfer.connect(reserveAccount).batchTransfer(
-        [accounts[1].address, accounts[2].address, accounts[3].address], [1, 2, 3, 4])
+        token.address,
+        [accounts[1].address, accounts[2].address, accounts[3].address],
+        [1, 2, 3, 4])
     } catch (e) {
       errorMessage = e.message
     }
@@ -61,7 +62,9 @@ describe('BatchTransfer', function () {
     let errorMessage
     try {
       await batchTransfer.connect(reserveAccount).batchTransfer(
-        [accounts[1].address, accounts[2].address], [1, 2, 3])
+        token.address,
+        [accounts[1].address, accounts[2].address],
+        [1, 2, 3])
     } catch (e) {
       errorMessage = e.message
     }
@@ -76,7 +79,9 @@ describe('BatchTransfer', function () {
     let errorMessage
     try {
       await batchTransfer.connect(reserveAccount).batchTransfer(
-        [accounts[1].address, accounts[2].address, '0x0000000000000000000000000000000000000000'], [1, 2, 3])
+        token.address,
+        [accounts[1].address, accounts[2].address, '0x0000000000000000000000000000000000000000'],
+        [1, 2, 3])
     } catch (e) {
       errorMessage = e.message
     }
@@ -91,6 +96,7 @@ describe('BatchTransfer', function () {
     let errorMessage
     try {
       await batchTransfer.connect(reserveAccount).batchTransfer(
+        token.address,
         [accounts[1].address, accounts[2].address, accounts[3].address], [1, totalSupply, 3])
     } catch (e) {
       errorMessage = e.message
@@ -110,7 +116,8 @@ describe('BatchTransfer', function () {
       amounts.push(1)
     }
 
-    await batchTransfer.connect(reserveAccount).batchTransfer(recipients, amounts)
+    await batchTransfer.connect(reserveAccount).batchTransfer(
+      token.address, recipients, amounts)
 
     expect(await token.balanceOf(accounts[1].address)).to.equal(totalTransferQuantity)
 
