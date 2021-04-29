@@ -1,7 +1,7 @@
 const hre = require('hardhat')
 const { expect } = require('chai')
 
-let reserveAccount, token, batchTransfer, accounts, tokenLockup
+let reserveAccount, token, accounts, tokenLockup
 const decimals = 10
 const totalSupply = 50000
 
@@ -52,7 +52,6 @@ describe('BatchTransfer fund release schedule', function () {
       batchDelay
     )
   })
-
 
   it('can transfer', async function () {
     await tokenLockup.connect(reserveAccount).batchFundReleaseSchedule(
