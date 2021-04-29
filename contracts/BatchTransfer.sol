@@ -2,6 +2,7 @@
 pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./TokenLockup.sol";
 
 contract BatchTransfer {
     IERC20 public token;
@@ -10,11 +11,16 @@ contract BatchTransfer {
         token = IERC20(_erc20Token);
     }
 
-    function batchTransfer(address[] memory recipients, uint[] memory amounts) public returns (bool) {
+    function batchTransfer(
+        address[] memory recipients,
+        uint[] memory amounts) external returns (bool) {
+
         require(recipients.length == amounts.length, "recipient & amount arrays must be the same length");
+
         for (uint i; i < recipients.length; i++) {
             token.transferFrom(msg.sender, recipients[i], amounts[i]);
         }
+
         return true;
     }
 }

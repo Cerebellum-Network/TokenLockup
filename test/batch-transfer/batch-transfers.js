@@ -1,7 +1,7 @@
 const hre = require('hardhat')
 const { expect } = require('chai')
 
-let reserveAccount, recipientAccount, token, batchTransfer, accounts
+let reserveAccount, token, batchTransfer, accounts
 const decimals = 10
 const totalSupply = 10000
 
@@ -10,7 +10,6 @@ describe('BatchTransfer', function () {
     accounts = await hre.ethers.getSigners()
 
     reserveAccount = accounts[0]
-    recipientAccount = accounts[1]
 
     const Token = await hre.ethers.getContractFactory('Token')
     token = await Token.deploy(

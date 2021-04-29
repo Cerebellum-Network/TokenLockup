@@ -87,8 +87,9 @@ contract TokenLockup {
         uint amount,
         uint commencementTimestamp, // unix timestamp
         uint scheduleId
-    ) external {
+    ) public {
         require(amount >= minReleaseScheduleAmount, "Amount too low");
+        require(to != address(0), "transfer to the zero address");
         require(scheduleId < releaseSchedules.length, "Schedule id out of bounds");
         require(amount >= releaseSchedules[scheduleId].releaseCount, "< 1 token per release too low");
 
@@ -101,6 +102,20 @@ contract TokenLockup {
         timelock.totalAmount = amount;
 
         timelocks[to].push(timelock);
+    }
+
+    function batchFundReleaseSchedule(
+        address[] memory recipients,
+        uint[] memory amounts,
+        uint commencementTimestamp, // unix timestamp
+        uint scheduleId
+    ) external returns (bool) {
+        require(amounts.length == recipients.length, "recipient & amount arrays must be the same length");
+        for (uint i; i < recipients.length; i++) {
+            fundReleaseSchedule(recipients[i], amounts[i], commencementTimestamp, scheduleId);
+        }
+
+        return true;
     }
 
 
