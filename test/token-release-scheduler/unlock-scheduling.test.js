@@ -24,7 +24,7 @@ async function exactlyMoreThanOneDayAgo () {
 }
 
 describe('TokenLockup unlock scheduling', async function () {
-  let releaser, token, reserveAccount, recipient, accounts
+  let tokenLockup, token, reserveAccount, recipient, accounts
   const decimals = 10
   const totalSupply = 8e9
 
@@ -45,7 +45,7 @@ describe('TokenLockup unlock scheduling', async function () {
       [totalSupply]
     )
     const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
-    releaser = await TokenLockup.deploy(
+    tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
@@ -61,56 +61,56 @@ describe('TokenLockup unlock scheduling', async function () {
     const batchDelay = 3600 * 24 * 4 // 4 days
     const commence = await exactlyMoreThanOneDayAgo()
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal(0)
-    expect(await releaser.scheduleCount())
+    expect(await tokenLockup.scheduleCount())
       .to.equal(0)
-    await token.connect(reserveAccount).approve(releaser.address, totalRecipientAmount)
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
 
-    await releaser.connect(reserveAccount).createReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
       totalBatches,
       firstDelay,
       firstBatchBips,
       batchDelay
     )
 
-    await releaser.connect(reserveAccount).fundReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       totalRecipientAmount,
       commence,
       0 // scheduleId
     )
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('8')
 
-    expect(await releaser.lockedBalanceOf(recipient.address))
+    expect(await tokenLockup.lockedBalanceOf(recipient.address))
       .to.equal('92')
 
-    expect(await releaser.balanceOf(recipient.address))
+    expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('100')
 
     await advanceTime('5')
 
     // firstBatch + ((totalRecipientAmount - firstBatch) / 2)
     // 8 + ((100 - 8) / 2) = 8 + (92 / 2) = 8 + 46 = 54
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('54')
 
-    expect(await releaser.lockedBalanceOf(recipient.address))
+    expect(await tokenLockup.lockedBalanceOf(recipient.address))
       .to.equal('46')
 
-    expect(await releaser.balanceOf(recipient.address))
+    expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('100')
 
     await advanceTime('5')
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal(totalRecipientAmount)
-    expect(await releaser.lockedBalanceOf(recipient.address))
+    expect(await tokenLockup.lockedBalanceOf(recipient.address))
       .to.equal('0')
 
-    expect(await releaser.balanceOf(recipient.address))
+    expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('100')
   })
 
@@ -122,9 +122,9 @@ describe('TokenLockup unlock scheduling', async function () {
     const batchDelay = 1
     const commence = 0
 
-    await token.connect(reserveAccount).approve(releaser.address, totalRecipientAmount)
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
 
-    await releaser.connect(reserveAccount).createReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
       totalBatches,
       firstDelay,
       firstBatchBips,
@@ -133,7 +133,7 @@ describe('TokenLockup unlock scheduling', async function () {
 
     let errorMessage
     try {
-      await releaser.connect(reserveAccount).fundReleaseSchedule(
+      await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
         recipient.address,
         totalRecipientAmount,
         commence,

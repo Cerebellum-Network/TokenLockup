@@ -27,18 +27,18 @@ describe('TokenLockup deployment test', async () => {
   })
 
   it('expected default deployment configuration', async () => {
-    const releaser = await TokenLockup.deploy(
+    const tokenLockup = await TokenLockup.deploy(
       token.address,
       schedulerName,
       schedulerSymbol,
       1e4
     )
 
-    expect(await releaser.name()).to.equal(schedulerName)
-    expect(await releaser.symbol()).to.equal(schedulerSymbol)
-    expect(await releaser.decimals()).to.equal(decimals)
-    expect(await releaser.token()).to.equal(token.address)
-    expect(await releaser.minReleaseScheduleAmount()).to.equal('10000')
+    expect(await tokenLockup.name()).to.equal(schedulerName)
+    expect(await tokenLockup.symbol()).to.equal(schedulerSymbol)
+    expect(await tokenLockup.decimals()).to.equal(decimals)
+    expect(await tokenLockup.token()).to.equal(token.address)
+    expect(await tokenLockup.minReleaseScheduleAmount()).to.equal('10000')
   })
 
   it('must deploy with minReleaseScheduleAmount > 0 ', async () => {

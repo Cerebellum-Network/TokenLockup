@@ -5,7 +5,7 @@ const { solidity } = require('ethereum-waffle')
 chai.use(solidity)
 
 describe('TokenLockup create release schedule', async function () {
-  let releaser, token, reserveAccount
+  let tokenLockup, token, reserveAccount
   const decimals = 10
   const totalSupply = 8e9
 
@@ -25,7 +25,7 @@ describe('TokenLockup create release schedule', async function () {
       [totalSupply]
     )
     const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
-    releaser = await TokenLockup.deploy(
+    tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
@@ -34,16 +34,16 @@ describe('TokenLockup create release schedule', async function () {
   })
 
   it('increments the schedulerCount', async function () {
-    await releaser.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1)
-    expect(await releaser.scheduleCount()).to.equal(1)
-    await releaser.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1)
-    expect(await releaser.scheduleCount()).to.equal(2)
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1)
+    expect(await tokenLockup.scheduleCount()).to.equal(1)
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1)
+    expect(await tokenLockup.scheduleCount()).to.equal(2)
   })
 
   it('must have at least 1 release', async function () {
     let error
     try {
-      await releaser.connect(reserveAccount).createReleaseSchedule(0, 1, 1, 1)
+      await tokenLockup.connect(reserveAccount).createReleaseSchedule(0, 1, 1, 1)
     } catch (e) {
       error = e
     }
@@ -54,7 +54,7 @@ describe('TokenLockup create release schedule', async function () {
   it('if there is one release it must release all tokens', async function () {
     let error
     try {
-      await releaser.connect(reserveAccount).createReleaseSchedule(1, 0, 1, 1)
+      await tokenLockup.connect(reserveAccount).createReleaseSchedule(1, 0, 1, 1)
     } catch (e) {
       error = e
     }
@@ -63,17 +63,17 @@ describe('TokenLockup create release schedule', async function () {
   })
 
   it('if there is one release it can release all tokens on the first batch', async function () {
-    const tx = await releaser.connect(reserveAccount).createReleaseSchedule(1, 0, 10000, 1)
+    const tx = await tokenLockup.connect(reserveAccount).createReleaseSchedule(1, 0, 10000, 1)
     const scheduleId = tx.value.toString()
     expect(scheduleId).to.equal('0')
-    const schedule = await releaser.connect(reserveAccount).releaseSchedules(scheduleId)
+    const schedule = await tokenLockup.connect(reserveAccount).releaseSchedules(scheduleId)
     expect(schedule.initialReleasePortionInBips).to.equal(10000)
   })
 
   it('initial release amount cannot exceed 100% (100 00 bips', async function () {
     let error
     try {
-      await releaser.connect(reserveAccount).createReleaseSchedule(1, 0, 10001, 1)
+      await tokenLockup.connect(reserveAccount).createReleaseSchedule(1, 0, 10001, 1)
     } catch (e) {
       error = e
     }

@@ -13,7 +13,7 @@ async function exactlyMoreThanOneDayAgo () {
 }
 
 describe('TokenLockup unlock scheduling for a specific timelock', async function () {
-  let releaser, token, reserveAccount, recipient, accounts
+  let tokenLockup, token, reserveAccount, recipient, accounts
   const decimals = 10
   const totalSupply = 8e9
 
@@ -34,7 +34,7 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
       [totalSupply]
     )
     const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
-    releaser = await TokenLockup.deploy(
+    tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
@@ -45,7 +45,7 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
     const firstDelay = 0
     const firstBatchBips = 800 // 8%
     const batchDelay = 3600 * 24 * 4 // 4 days
-    await releaser.connect(reserveAccount).createReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
       totalBatches,
       firstDelay,
       firstBatchBips,
@@ -56,60 +56,60 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
   it('can transfer tokens from a specific timelock', async () => {
     const commence = await exactlyMoreThanOneDayAgo()
 
-    await token.connect(reserveAccount).approve(releaser.address, 200)
+    await token.connect(reserveAccount).approve(tokenLockup.address, 200)
 
-    await releaser.connect(reserveAccount).fundReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       100,
       commence,
       0 // scheduleId
     )
 
-    expect(await token.balanceOf(releaser.address)).to.equal(100)
+    expect(await token.balanceOf(tokenLockup.address)).to.equal(100)
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('8')
 
-    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0))
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0))
       .to.equal('8')
 
-    await releaser.connect(recipient).transferTimelock(accounts[2].address, 7, 0)
+    await tokenLockup.connect(recipient).transferTimelock(accounts[2].address, 7, 0)
     const balance = await token.connect(reserveAccount).balanceOf(accounts[2].address)
     expect(balance).to.equal(7)
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('1')
 
-    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0))
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0))
       .to.equal('1')
 
-    expect(await releaser.balanceOf(recipient.address))
+    expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('93')
   })
 
   it('cannot transfer more than the unlocked balance', async () => {
     const commence = await exactlyMoreThanOneDayAgo()
 
-    await token.connect(reserveAccount).approve(releaser.address, 200)
+    await token.connect(reserveAccount).approve(tokenLockup.address, 200)
 
-    await releaser.connect(reserveAccount).fundReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       100,
       commence,
       0 // scheduleId
     )
 
-    expect(await token.balanceOf(releaser.address)).to.equal(100)
+    expect(await token.balanceOf(tokenLockup.address)).to.equal(100)
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('8')
 
-    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0))
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0))
       .to.equal('8')
 
     let errorMessage
     try {
-      await releaser.connect(recipient).transferTimelock(accounts[2].address, 9, 0)
+      await tokenLockup.connect(recipient).transferTimelock(accounts[2].address, 9, 0)
     } catch (e) {
       errorMessage = e.message
     }
@@ -119,13 +119,13 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
     const balance = await token.connect(reserveAccount).balanceOf(accounts[2].address)
     expect(balance).to.equal(0)
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('8')
 
-    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0))
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0))
       .to.equal('8')
 
-    expect(await releaser.balanceOf(recipient.address))
+    expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('100')
   })
 
@@ -136,58 +136,58 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
     const batchDelay = 3600 * 24 * 4 // 4 days
     const commence = await exactlyMoreThanOneDayAgo()
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal(0)
-    expect(await releaser.scheduleCount())
+    expect(await tokenLockup.scheduleCount())
       .to.equal(1)
-    await token.connect(reserveAccount).approve(releaser.address, 200)
+    await token.connect(reserveAccount).approve(tokenLockup.address, 200)
 
-    await releaser.connect(reserveAccount).createReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
       totalBatches,
       firstDelay,
       firstBatchBips,
       batchDelay
     )
 
-    await releaser.connect(reserveAccount).fundReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       100,
       commence,
       0 // scheduleId
     )
 
-    await releaser.connect(reserveAccount).fundReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       50,
       commence,
       0 // scheduleId
     )
 
-    expect(await token.balanceOf(releaser.address)).to.equal(150)
+    expect(await token.balanceOf(tokenLockup.address)).to.equal(150)
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('12')
 
-    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0))
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0))
       .to.equal('8')
 
-    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 1))
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1))
       .to.equal('4')
 
-    await releaser.connect(recipient).transferTimelock(accounts[2].address, 7, 0)
+    await tokenLockup.connect(recipient).transferTimelock(accounts[2].address, 7, 0)
     const balance = await token.connect(reserveAccount).balanceOf(accounts[2].address)
     expect(balance).to.equal(7)
 
-    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0))
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0))
       .to.equal('1')
 
-    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 1))
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1))
       .to.equal('4')
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('5')
 
-    expect(await token.balanceOf(releaser.address)).to.equal(143)
+    expect(await token.balanceOf(tokenLockup.address)).to.equal(143)
   })
 
   it('transferring from a timelock cannot use tokens from another timelock', async () => {
@@ -197,47 +197,47 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
     const batchDelay = 3600 * 24 * 4 // 4 days
     const commence = await exactlyMoreThanOneDayAgo()
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal(0)
-    expect(await releaser.scheduleCount())
+    expect(await tokenLockup.scheduleCount())
       .to.equal(1)
-    await token.connect(reserveAccount).approve(releaser.address, 200)
+    await token.connect(reserveAccount).approve(tokenLockup.address, 200)
 
-    await releaser.connect(reserveAccount).createReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
       totalBatches,
       firstDelay,
       firstBatchBips,
       batchDelay
     )
 
-    await releaser.connect(reserveAccount).fundReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       100,
       commence,
       0 // scheduleId
     )
 
-    await releaser.connect(reserveAccount).fundReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       50,
       commence,
       0 // scheduleId
     )
 
-    expect(await token.balanceOf(releaser.address)).to.equal(150)
+    expect(await token.balanceOf(tokenLockup.address)).to.equal(150)
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('12')
 
-    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0))
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0))
       .to.equal('8')
 
-    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 1))
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1))
       .to.equal('4')
 
     let errorMessage
     try {
-      await releaser.connect(recipient).transferTimelock(accounts[2].address, 9, 0)
+      await tokenLockup.connect(recipient).transferTimelock(accounts[2].address, 9, 0)
     } catch (e) {
       errorMessage = e.message
     }
@@ -247,15 +247,15 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
 
     expect(balance).to.equal(0)
 
-    expect(await token.balanceOf(releaser.address)).to.equal(150)
+    expect(await token.balanceOf(tokenLockup.address)).to.equal(150)
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('12')
 
-    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 0))
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0))
       .to.equal('8')
 
-    expect(await releaser.unlockedBalanceOfTimelock(recipient.address, 1))
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1))
       .to.equal('4')
   })
 })
