@@ -4,7 +4,7 @@ const { expect } = chai
 const { solidity } = require('ethereum-waffle')
 chai.use(solidity)
 
-describe('TokenReleaseScheduler create release schedule', async function () {
+describe('TokenLockup create release schedule', async function () {
   let releaser, token, reserveAccount
   const decimals = 10
   const totalSupply = 8e9
@@ -24,8 +24,8 @@ describe('TokenReleaseScheduler create release schedule', async function () {
       [accounts[0].address],
       [totalSupply]
     )
-    const TokenReleaseScheduler = await hre.ethers.getContractFactory('TokenReleaseScheduler')
-    releaser = await TokenReleaseScheduler.deploy(
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
+    releaser = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',

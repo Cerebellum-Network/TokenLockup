@@ -4,15 +4,15 @@ const { expect } = chai
 const { solidity } = require('ethereum-waffle')
 chai.use(solidity)
 
-describe('TokenReleaseScheduler deployment test', async () => {
-  let token, TokenReleaseScheduler, Token, accounts
+describe('TokenLockup deployment test', async () => {
+  let token, TokenLockup, Token, accounts
   const decimals = 10
   const totalSupply = 8e9
   const schedulerName = 'Test Scheduled Release Token'
   const schedulerSymbol = 'XYZ Lockup'
 
   beforeEach(async () => {
-    TokenReleaseScheduler = await hre.ethers.getContractFactory('TokenReleaseScheduler')
+    TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
     Token = await hre.ethers.getContractFactory('Token')
     accounts = await hre.ethers.getSigners()
 
@@ -27,7 +27,7 @@ describe('TokenReleaseScheduler deployment test', async () => {
   })
 
   it('expected default deployment configuration', async () => {
-    const releaser = await TokenReleaseScheduler.deploy(
+    const releaser = await TokenLockup.deploy(
       token.address,
       schedulerName,
       schedulerSymbol,
@@ -44,7 +44,7 @@ describe('TokenReleaseScheduler deployment test', async () => {
   it('must deploy with minReleaseScheduleAmount > 0 ', async () => {
     let errorMessage
     try {
-      await TokenReleaseScheduler.deploy(
+      await TokenLockup.deploy(
         token.address,
         schedulerName,
         'XYZ Lockup',

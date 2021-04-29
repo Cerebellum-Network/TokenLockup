@@ -4,7 +4,7 @@ pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
-contract TokenReleaseScheduler {
+contract TokenLockup {
     ERC20Burnable public token;
     string private _name;
     string private _symbol;

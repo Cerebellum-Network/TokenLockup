@@ -21,15 +21,15 @@ async function main () {
   // await hre.run('compile');
 
   // token release scheduler deployment
-  const TokenRelease = await hre.ethers.getContractFactory('TokenReleaseScheduler')
-  const tokenReleaseSchedulerArgs = [
+  const TokenRelease = await hre.ethers.getContractFactory('TokenLockup')
+  const TokenLockupArgs = [
     token.address,
     config.token.name + ' Lockup',
     config.token.symbol + ' Lockup',
     10 * 1e10
   ]
   const release = await TokenRelease.deploy(
-    ...tokenReleaseSchedulerArgs,
+    ...TokenLockupArgs,
     {
       gasLimit: 4000000
     })
@@ -53,7 +53,7 @@ async function main () {
   // upload the contracts Etherscan for verification
   await hre.run('verify:verify', {
     address: release.address,
-    constructorArguments: tokenReleaseSchedulerArgs
+    constructorArguments: TokenLockupArgs
   })
 }
 

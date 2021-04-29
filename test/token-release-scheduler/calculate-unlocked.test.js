@@ -16,7 +16,7 @@ function months (numMonths) {
 //   return days(365 * numYears)
 // }
 
-describe('TokenReleaseScheduler calculate unlocked', async function () {
+describe('TokenLockup calculate unlocked', async function () {
   let releaser, token, reserveAccount, accounts
   const decimals = 10
   const totalSupply = 8e9
@@ -35,8 +35,8 @@ describe('TokenReleaseScheduler calculate unlocked', async function () {
       [accounts[0].address],
       [totalSupply]
     )
-    const TokenReleaseScheduler = await hre.ethers.getContractFactory('TokenReleaseScheduler')
-    releaser = await TokenReleaseScheduler.deploy(
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
+    releaser = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',

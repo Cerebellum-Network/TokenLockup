@@ -12,7 +12,7 @@ async function exactlyMoreThanOneDayAgo () {
   return await currentTimestamp(-3601)
 }
 
-describe('TokenReleaseScheduler unlock scheduling for a specific timelock', async function () {
+describe('TokenLockup unlock scheduling for a specific timelock', async function () {
   let releaser, token, reserveAccount, recipient, accounts
   const decimals = 10
   const totalSupply = 8e9
@@ -33,8 +33,8 @@ describe('TokenReleaseScheduler unlock scheduling for a specific timelock', asyn
       [accounts[0].address],
       [totalSupply]
     )
-    const TokenReleaseScheduler = await hre.ethers.getContractFactory('TokenReleaseScheduler')
-    releaser = await TokenReleaseScheduler.deploy(
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
+    releaser = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
