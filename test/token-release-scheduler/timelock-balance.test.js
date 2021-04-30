@@ -47,7 +47,13 @@ describe('TokenLockup timelock balances', async function () {
       [accounts[0].address],
       [totalSupply]
     )
-    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
+    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
+    const scheduleCalc = await ScheduleCalc.deploy()
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
+      libraries: {
+        ScheduleCalc: scheduleCalc.address
+      }
+    })
     tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',

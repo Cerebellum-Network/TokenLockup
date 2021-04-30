@@ -3,28 +3,15 @@
 pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "./ScheduleCalc.sol";
 
 contract TokenLockup {
     ERC20Burnable public token;
     string private _name;
     string private _symbol;
 
-    struct ReleaseSchedule {
-        uint releaseCount;
-        uint delayUntilFirstReleaseInSeconds;
-        uint initialReleasePortionInBips;
-        uint periodBetweenReleasesInSeconds;
-    }
-
     ReleaseSchedule[] public releaseSchedules;
     uint public minReleaseScheduleAmount;
-
-    struct Timelock {
-        uint scheduleId;
-        uint commencementTimestamp;
-        uint tokensTransferred;
-        uint totalAmount;
-    }
 
     mapping(address => Timelock[]) public timelocks;
     mapping(address => uint) internal _totalTokensUnlocked;
@@ -260,37 +247,7 @@ contract TokenLockup {
     }
 
     function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, uint scheduleId) public view returns (uint unlocked) {
-        uint secondsElapsed = currentTimestamp - commencedTimestamp;
-
-        // return the full amount if the total lockup period has expired
-        // unlocked amounts in each period are truncated and round down remainders smaller than the smallest unit
-        // unlocking the full amount unlocks any remainder amounts in the final unlock period
-        // this is done first to reduce computation
-        if (secondsElapsed >= releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds +
-        (releaseSchedules[scheduleId].periodBetweenReleasesInSeconds * (releaseSchedules[scheduleId].releaseCount - 1))) {
-            return amount;
-        }
-
-        // unlock the initial release if the delay has elapsed
-        if (secondsElapsed >= releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds) {
-            unlocked += (amount * releaseSchedules[scheduleId].initialReleasePortionInBips) / 1e4;
-
-            // if at least one period after the delay has passed
-            if (secondsElapsed - releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds
-                >= releaseSchedules[scheduleId].periodBetweenReleasesInSeconds) {
-
-                // calculate the number of additional periods that have passed (not including the initial release)
-                // this discards any remainders (ie it truncates / rounds down)
-                uint additionalPeriods =
-                (secondsElapsed - releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds) /
-                releaseSchedules[scheduleId].periodBetweenReleasesInSeconds;
-
-                // unlocked includes the number of additionalPeriods elapsed, times the evenly distributed remaining amount
-                unlocked += additionalPeriods * ((amount - unlocked) / (releaseSchedules[scheduleId].releaseCount - 1));
-            }
-        }
-
-        return unlocked;
+        return ScheduleCalc.calculateUnlocked(commencedTimestamp, currentTimestamp, amount, releaseSchedules[scheduleId]);
     }
 
     function removeTimelock(address recipient, uint releaseIndex) internal {
