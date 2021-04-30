@@ -34,7 +34,7 @@ contract TokenLockup {
         _symbol = symbol_;
         token = ERC20Burnable(_token);
 
-        require(_minReleaseScheduleAmount > token.decimals(), "Min release schedule amount cannot be less than 1 token");
+        require(_minReleaseScheduleAmount > 0, "Min schedule amount > 0");
         minReleaseScheduleAmount = _minReleaseScheduleAmount;
     }
 
@@ -50,12 +50,12 @@ contract TokenLockup {
         uint unlockScheduleId
     ) {
         require(releaseCount >= 1, "< 1 release");
-        require(initialReleasePortionInBips <= 1e4, "Initial release exceeded 100%");
+        require(initialReleasePortionInBips <= 1e4, "release > 100%");
         if (releaseCount > 1) {
-            require(periodBetweenReleasesInSeconds > 0, "Release periods < 1");
+            require(periodBetweenReleasesInSeconds > 0, "period = 0");
         }
         if (releaseCount == 1) {
-            require(initialReleasePortionInBips == 1e4, "If there is only one batch, initial release must be 100%");
+            require(initialReleasePortionInBips == 1e4, "released < 100%");
         }
 
         releaseSchedules.push(ReleaseSchedule(
@@ -75,10 +75,10 @@ contract TokenLockup {
         uint commencementTimestamp, // unix timestamp
         uint scheduleId
     ) public {
-        require(amount >= minReleaseScheduleAmount, "Amount too low");
-        require(to != address(0), "transfer to the zero address");
-        require(scheduleId < releaseSchedules.length, "Schedule id out of bounds");
-        require(amount >= releaseSchedules[scheduleId].releaseCount, "< 1 token per release too low");
+        require(amount >= minReleaseScheduleAmount, "amount < min");
+        require(to != address(0), "to 0 address");
+        require(scheduleId < releaseSchedules.length, "bad scheduleId");
+        require(amount >= releaseSchedules[scheduleId].releaseCount, "< 1 token per release");
 
         // It will revert via ERC20 implementation if there's no allowance
         token.transferFrom(msg.sender, address(this), amount);
@@ -97,7 +97,7 @@ contract TokenLockup {
         uint commencementTimestamp, // unix timestamp
         uint scheduleId
     ) external returns (bool) {
-        require(amounts.length == recipients.length, "recipient & amount arrays must be the same length");
+        require(amounts.length == recipients.length, "mismatched array length");
         for (uint i; i < recipients.length; i++) {
             fundReleaseSchedule(recipients[i], amounts[i], commencementTimestamp, scheduleId);
         }
@@ -151,7 +151,7 @@ contract TokenLockup {
     }
 
     function transferFrom(address from, address to, uint value) external returns (bool) {
-        require(_allowances[from][msg.sender] >= value, "Insufficient allowance to transferFrom");
+        require(_allowances[from][msg.sender] >= value); // "Insufficient allowance to transferFrom"
         _allowances[from][msg.sender] -= value;
         return _transfer(from, to, value);
     }
@@ -176,7 +176,7 @@ contract TokenLockup {
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
     function decreaseAllowance(address spender, uint subtractedValue) external returns (bool) {
         uint currentAllowance = _allowances[msg.sender][spender];
-        require(currentAllowance >= subtractedValue, "Insufficient allowance");
+        require(currentAllowance >= subtractedValue); // "Insufficient allowance"
         _approve(msg.sender, spender, _allowances[msg.sender][spender] - subtractedValue);
         return true;
     }
@@ -198,7 +198,7 @@ contract TokenLockup {
     }
 
     function burn(uint timelockIndex, uint confirmationIdPlusOne) public {
-        require(timelockIndex < timelocks[msg.sender].length, "No such schedule");
+        require(timelockIndex < timelocks[msg.sender].length, "No schedule");
 
         // this also protects from overflow below
         require(confirmationIdPlusOne == timelockIndex + 1, "A burn wasn't confirmed");
@@ -211,7 +211,7 @@ contract TokenLockup {
     }
 
     function _transfer(address from, address to, uint value) internal returns (bool) {
-        require(unlockedBalanceOf(from) >= value, "Not enough unlocked");
+        require(unlockedBalanceOf(from) >= value, "amount > unlocked");
 
         uint remainingTransfer = value;
 
@@ -240,7 +240,7 @@ contract TokenLockup {
     }
 
     function transferTimelock(address to, uint value, uint timelockId) public returns (bool) {
-        require(unlockedBalanceOfTimelock(msg.sender, timelockId) >= value, "Not enough unlocked");
+        require(unlockedBalanceOfTimelock(msg.sender, timelockId) >= value, "amount > unlocked");
         timelocks[msg.sender][timelockId].tokensTransferred += value;
         token.transfer(to, value);
         return true; // TODO: test return value

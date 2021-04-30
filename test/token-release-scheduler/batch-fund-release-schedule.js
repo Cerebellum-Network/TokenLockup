@@ -91,7 +91,7 @@ describe('BatchTransfer fund release schedule', function () {
       errorMessage = e.message
     }
 
-    expect(errorMessage).to.match(/recipient & amount arrays must be the same length/)
+    expect(errorMessage).to.match(/mismatched array length/)
     expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply)
   })
 
@@ -107,7 +107,7 @@ describe('BatchTransfer fund release schedule', function () {
       errorMessage = e.message
     }
 
-    expect(errorMessage).to.match(/recipient & amount arrays must be the same length/)
+    expect(errorMessage).to.match(/mismatched array length/)
     expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply)
   })
 
@@ -123,7 +123,7 @@ describe('BatchTransfer fund release schedule', function () {
       errorMessage = e.message
     }
 
-    expect(errorMessage).to.match(/transfer to the zero address/)
+    expect(errorMessage).to.match(/to 0 address/)
     expect(await token.balanceOf(reserveAccount.address)).to.equal(totalSupply)
   })
 

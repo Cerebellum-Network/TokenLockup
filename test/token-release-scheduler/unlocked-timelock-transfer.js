@@ -120,7 +120,7 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
       errorMessage = e.message
     }
 
-    expect(errorMessage).to.match(/Not enough unlocked/)
+    expect(errorMessage).to.match(/amount > unlocked/)
 
     const balance = await token.connect(reserveAccount).balanceOf(accounts[2].address)
     expect(balance).to.equal(0)
@@ -247,7 +247,7 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
     } catch (e) {
       errorMessage = e.message
     }
-    expect(errorMessage).to.match(/Not enough unlocked/)
+    expect(errorMessage).to.match(/amount > unlocked/)
 
     const balance = await token.connect(reserveAccount).balanceOf(accounts[2].address)
 

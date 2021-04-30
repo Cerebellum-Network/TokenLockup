@@ -59,6 +59,6 @@ describe('TokenLockup deployment test', async () => {
     } catch (e) {
       errorMessage = e.message
     }
-    expect(errorMessage).to.match(/VM Exception.*Min release schedule amount cannot be less than 1 token/)
+    expect(errorMessage).to.match(/Min schedule amount > 0/)
   })
 })

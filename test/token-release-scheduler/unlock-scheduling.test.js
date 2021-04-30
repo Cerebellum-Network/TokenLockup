@@ -149,6 +149,6 @@ describe('TokenLockup unlock scheduling', async function () {
       errorMessage = e.message
     }
 
-    expect(errorMessage).to.match(/< 1 token per release too low/)
+    expect(errorMessage).to.match(/< 1 token per release/)
   })
 })

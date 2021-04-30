@@ -112,6 +112,6 @@ describe('TokenLockup unlock scheduling', async function () {
     } catch (e) {
       errorMessage = e.message
     }
-    expect(errorMessage).to.match(/Not enough unlocked/)
+    expect(errorMessage).to.match(/amount > unlocked/)
   })
 })

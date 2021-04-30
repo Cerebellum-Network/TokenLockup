@@ -65,7 +65,7 @@ describe('TokenLockup create release schedule', async function () {
       error = e
     }
 
-    expect(error.message).to.match(/VM Exception.*If there is only one batch, initial release must be 100%/)
+    expect(error.message).to.match(/released < 100%/)
   })
 
   it('if there is one release it can release all tokens on the first batch', async function () {
@@ -84,6 +84,6 @@ describe('TokenLockup create release schedule', async function () {
       error = e
     }
 
-    expect(error.message).to.match(/Initial release exceeded 100%/)
+    expect(error.message).to.match(/release > 100%/)
   })
 })
