@@ -17,40 +17,18 @@ async function main () {
   // manually to make sure everything is compiled
   // await hre.run('compile');
 
-  const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
-  const scheduleCalc = await ScheduleCalc.deploy()
+  const BatchTransfer = await hre.ethers.getContractFactory('BatchTransfer')
+  let batchTransfer = await BatchTransfer.deploy()
 
-  const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
-    libraries: {
-      ScheduleCalc: scheduleCalc.address
-    }
-  })
+  console.log('Deployed BatchTransfer to: ', batchTransfer.address)
 
-  const TokenLockupArgs = [
-    // token.address,
-    '0xE322488096C36edccE397D179E7b1217353884BB',
-    config.token.name + ' Lockup',
-    config.token.symbol + ' Lockup',
-    10 * 1e10
-  ]
-  const release = await TokenLockup.deploy(
-    ...TokenLockupArgs,
-    {
-      gasLimit: 4000000
-    })
-  console.log('Deployed release at: ', release.address)
-
-  await release.deployTransaction.wait(5)
+  await batchTransfer.deployTransaction.wait(5)
   console.log('5 confirmations completed')
 
   // upload the contracts Etherscan for verification
   await hre.run('verify:verify', {
-    address: release.address,
-    constructorArguments: TokenLockupArgs
-  })
-
-  await hre.run('verify:verify', {
-    address: scheduleCalc.address
+    address: batchTransfer.address,
+    constructorArguments: []
   })
 }
 

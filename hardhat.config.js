@@ -59,6 +59,24 @@ module.exports = {
       },
       gas: 4 * 1e6
     },
+    rinkeby: {
+      token: {
+        name: 'Xavier Yolo Zeta',
+        symbol: 'XYZ',
+        decimals: 10,
+        totalSupply: tenBillionWithTenDecimalPrecision.toString(), // 10B + 10 decimals
+        mintAddresses: ['0xdFA017425c938c13ef362544D2662230cC7668eB', '0x421C655a9A40930c10eaD2b479ad529342973E68'],
+        mintAmounts: [walletAmount1.toString(), wallet2Amount2.toString()]
+      },
+      lockup: {
+        minReleaseScheduleAmount: 10 * 1e10 // 10 tokens with 10 decimals
+      },
+      url: process.env.RINKEBY_NETWORK_URL,
+      accounts: {
+        mnemonic: process.env.RINKEBY
+      },
+      gas: 4 * 1e6
+    },
     mainnet: {
       token: {
         name: 'Xavier Yolo Zeta',
