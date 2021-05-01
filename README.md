@@ -113,7 +113,7 @@ Lockup period schedules may be configured and funded without a central admin rol
 
 ```solidity
 // DRAFT PSEUDOCODE
-contract TokenReleaseScheduler {
+contract TokenLockup {
   struct ReleaseSchedule {
     uint releaseCount;
     uint delayUntilFirstReleaseInSeconds;

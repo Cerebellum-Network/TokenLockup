@@ -5,11 +5,12 @@
 // Runtime Environment's members available in the global scope.
 
 const hre = require('hardhat')
-const config = hre.network.config
 const fs = require('fs')
+const deploymentParamsLog = './deployment.json'
 console.log('Deploy Network: ', hre.network.name)
-console.log(config.token)
 
+// Publishing contract details to Etherscan is a separate script
+// because Etherscan intermittenly refuses the API request
 async function main () {
   // Hardhat always runs the compile task when running scripts with its command
   // line interface.
@@ -18,39 +19,22 @@ async function main () {
   // manually to make sure everything is compiled
   // await hre.run('compile');
 
-  // We get the contract to deploy
-  const Token = await hre.ethers.getContractFactory('Token')
-  const token = await Token.deploy(
-    config.token.name,
-    config.token.symbol,
-    config.token.decimals,
-    config.token.totalSupply,
-    config.token.mintAddresses,
-    config.token.mintAmounts
-  )
-  console.log('Deployed token at: ', token.address)
+  // load deployment info for the current environment
 
-  const TokenRelease = await hre.ethers.getContractFactory('TokenReleaseScheduler')
-  const release = await TokenRelease.deploy(
-    token.address,
-    config.token.name + ' Lockup',
-    config.token.symbol + ' Lockup',
-    10 * 1e10,
-    {
-      gasLimit: 4000000
-    }
-  )
-  console.log('Deployed release at: ', release.address)
+  const deploymentInfo = JSON.parse(fs.readFileSync(deploymentParamsLog))[hre.network.name.toString()]
+  console.log(deploymentInfo)
 
-  fs.writeFileSync(
-    hre.network.name + 'Deployment.json',
-    JSON.stringify(
-      {
-        token: token.address,
-        release: release.address
-      }
-    )
-  )
+  // wait for the deployed contract to be confirmed enough times to successfully post the definition to Etherscan
+  console.log('checking 5 confirmations completed')
+  await ethers.provider.waitForTransaction(deploymentInfo.token.transaction, 5)
+  console.log('5 confirmations have been completed')
+
+  // // upload the contracts Etherscan for verification
+  console.log('uploading the contract definition to Etherscan')
+  await hre.run('verify:verify', {
+    address: deploymentInfo.token.address,
+    constructorArguments: deploymentInfo.token.args
+  })
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -12,8 +12,8 @@ async function exactlyMoreThanOneDayAgo () {
   return await currentTimestamp(-3601)
 }
 
-describe('TokenReleaseScheduler burn timelock', async function () {
-  let releaser, token, reserveAccount, recipient, accounts
+describe('TokenLockup burn timelock', async function () {
+  let tokenLockup, token, reserveAccount, recipient, accounts
   const decimals = 10
   const totalSupply = 8e9
 
@@ -33,8 +33,14 @@ describe('TokenReleaseScheduler burn timelock', async function () {
       [accounts[0].address],
       [totalSupply]
     )
-    const TokenReleaseScheduler = await hre.ethers.getContractFactory('TokenReleaseScheduler')
-    releaser = await TokenReleaseScheduler.deploy(
+    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
+    const scheduleCalc = await ScheduleCalc.deploy()
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
+      libraries: {
+        ScheduleCalc: scheduleCalc.address
+      }
+    })
+    tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
@@ -50,44 +56,44 @@ describe('TokenReleaseScheduler burn timelock', async function () {
     const batchDelay = 3600 * 24 * 4 // 4 days
     const commence = await exactlyMoreThanOneDayAgo()
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal(0)
-    expect(await releaser.scheduleCount())
+    expect(await tokenLockup.scheduleCount())
       .to.equal(0)
-    await token.connect(reserveAccount).approve(releaser.address, totalRecipientAmount)
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
 
-    await releaser.connect(reserveAccount).createReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
       totalBatches,
       firstDelay,
       firstBatchBips,
       batchDelay
     )
 
-    await releaser.connect(reserveAccount).fundReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       totalRecipientAmount,
       commence,
       0 // scheduleId
     )
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('8')
 
-    expect(await releaser.lockedBalanceOf(recipient.address))
+    expect(await tokenLockup.lockedBalanceOf(recipient.address))
       .to.equal('92')
 
-    expect(await releaser.balanceOf(recipient.address))
+    expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('100')
 
-    await releaser.connect(recipient).burn(0, 1)
+    await tokenLockup.connect(recipient).burn(0, 1)
 
-    expect(await releaser.unlockedBalanceOf(recipient.address))
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('0')
 
-    expect(await releaser.lockedBalanceOf(recipient.address))
+    expect(await tokenLockup.lockedBalanceOf(recipient.address))
       .to.equal('0')
 
-    expect(await releaser.balanceOf(recipient.address))
+    expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('0')
   })
 })

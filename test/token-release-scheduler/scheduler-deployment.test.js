@@ -4,15 +4,21 @@ const { expect } = chai
 const { solidity } = require('ethereum-waffle')
 chai.use(solidity)
 
-describe('TokenReleaseScheduler deployment test', async () => {
-  let token, TokenReleaseScheduler, Token, accounts
+describe('TokenLockup deployment test', async () => {
+  let token, TokenLockup, Token, accounts
   const decimals = 10
   const totalSupply = 8e9
   const schedulerName = 'Test Scheduled Release Token'
   const schedulerSymbol = 'XYZ Lockup'
 
   beforeEach(async () => {
-    TokenReleaseScheduler = await hre.ethers.getContractFactory('TokenReleaseScheduler')
+    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
+    const scheduleCalc = await ScheduleCalc.deploy()
+    TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
+      libraries: {
+        ScheduleCalc: scheduleCalc.address
+      }
+    })
     Token = await hre.ethers.getContractFactory('Token')
     accounts = await hre.ethers.getSigners()
 
@@ -27,24 +33,24 @@ describe('TokenReleaseScheduler deployment test', async () => {
   })
 
   it('expected default deployment configuration', async () => {
-    const releaser = await TokenReleaseScheduler.deploy(
+    const tokenLockup = await TokenLockup.deploy(
       token.address,
       schedulerName,
       schedulerSymbol,
       1e4
     )
 
-    expect(await releaser.name()).to.equal(schedulerName)
-    expect(await releaser.symbol()).to.equal(schedulerSymbol)
-    expect(await releaser.decimals()).to.equal(decimals)
-    expect(await releaser.token()).to.equal(token.address)
-    expect(await releaser.minReleaseScheduleAmount()).to.equal('10000')
+    expect(await tokenLockup.name()).to.equal(schedulerName)
+    expect(await tokenLockup.symbol()).to.equal(schedulerSymbol)
+    expect(await tokenLockup.decimals()).to.equal(decimals)
+    expect(await tokenLockup.token()).to.equal(token.address)
+    expect(await tokenLockup.minReleaseScheduleAmount()).to.equal('10000')
   })
 
   it('must deploy with minReleaseScheduleAmount > 0 ', async () => {
     let errorMessage
     try {
-      await TokenReleaseScheduler.deploy(
+      await TokenLockup.deploy(
         token.address,
         schedulerName,
         'XYZ Lockup',
@@ -53,6 +59,6 @@ describe('TokenReleaseScheduler deployment test', async () => {
     } catch (e) {
       errorMessage = e.message
     }
-    expect(errorMessage).to.match(/VM Exception.*Min release schedule amount cannot be less than 1 token/)
+    expect(errorMessage).to.match(/Min schedule amount > 0/)
   })
 })

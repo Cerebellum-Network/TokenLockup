@@ -12,8 +12,8 @@ async function exactlyMoreThanOneDayAgo () {
   return await currentTimestamp(-3601)
 }
 
-describe('TokenReleaseScheduler unlock scheduling', async function () {
-  let releaser, token, reserveAccount, recipient, accounts, allowedAccount, allowedAccountRecipient
+describe('TokenLockup unlock scheduling', async function () {
+  let tokenLockup, token, reserveAccount, recipient, accounts, allowedAccount, allowedAccountRecipient
   const decimals = 10
   const totalSupply = 8e9
 
@@ -33,8 +33,15 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
       [accounts[0].address],
       [totalSupply]
     )
-    const TokenReleaseScheduler = await hre.ethers.getContractFactory('TokenReleaseScheduler')
-    releaser = await TokenReleaseScheduler.deploy(
+    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
+    const scheduleCalc = await ScheduleCalc.deploy()
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
+      libraries: {
+        ScheduleCalc: scheduleCalc.address
+      }
+    })
+
+    tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
@@ -50,16 +57,16 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
     allowedAccount = accounts[3]
     allowedAccountRecipient = accounts[4]
 
-    await token.connect(reserveAccount).approve(releaser.address, totalRecipientAmount)
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
 
-    await releaser.connect(reserveAccount).createReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
       totalBatches,
       firstDelay,
       firstBatchBips,
       batchDelay
     )
 
-    await releaser.connect(reserveAccount).fundReleaseSchedule(
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       100,
       commence,
@@ -68,43 +75,43 @@ describe('TokenReleaseScheduler unlock scheduling', async function () {
   })
 
   it('unlocked tokens can be transferred by an approved account with balances from multiple lockups', async () => {
-    expect(await releaser.connect(recipient).balanceOf(recipient.address)).to.equal(100)
-    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
+    expect(await tokenLockup.connect(recipient).balanceOf(recipient.address)).to.equal(100)
+    expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
 
-    await releaser.connect(recipient).approve(allowedAccount.address, 7)
-    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(7)
-    await releaser.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 7)
+    await tokenLockup.connect(recipient).approve(allowedAccount.address, 7)
+    expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(7)
+    await tokenLockup.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 7)
   })
 
   it('increaseAllowance and decreaseAllowance work', async () => {
-    expect(await releaser.connect(recipient).balanceOf(recipient.address)).to.equal(100)
-    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
+    expect(await tokenLockup.connect(recipient).balanceOf(recipient.address)).to.equal(100)
+    expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
 
-    await releaser.connect(recipient).approve(allowedAccount.address, 7)
-    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(7)
+    await tokenLockup.connect(recipient).approve(allowedAccount.address, 7)
+    expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(7)
 
-    await releaser.connect(recipient).increaseAllowance(allowedAccount.address, 5)
-    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(12)
+    await tokenLockup.connect(recipient).increaseAllowance(allowedAccount.address, 5)
+    expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(12)
 
-    await releaser.connect(recipient).decreaseAllowance(allowedAccount.address, 1)
-    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(11)
+    await tokenLockup.connect(recipient).decreaseAllowance(allowedAccount.address, 1)
+    expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(11)
 
-    await releaser.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 11)
+    await tokenLockup.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 11)
   })
 
   it('cannot transferFrom approved amount that exceeds that locked token amount', async () => {
-    expect(await releaser.connect(recipient).balanceOf(recipient.address)).to.equal(100)
-    expect(await releaser.connect(recipient).unlockedBalanceOf(recipient.address)).to.equal(50)
-    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
+    expect(await tokenLockup.connect(recipient).balanceOf(recipient.address)).to.equal(100)
+    expect(await tokenLockup.connect(recipient).unlockedBalanceOf(recipient.address)).to.equal(50)
+    expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
 
-    await releaser.connect(recipient).approve(allowedAccount.address, 100) // more than unlocked less than balance
-    expect(await releaser.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(100)
+    await tokenLockup.connect(recipient).approve(allowedAccount.address, 100) // more than unlocked less than balance
+    expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(100)
     let errorMessage
     try {
-      await releaser.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 51)
+      await tokenLockup.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 51)
     } catch (e) {
       errorMessage = e.message
     }
-    expect(errorMessage).to.match(/VM Exception.*revert Not enough unlocked tokens to transfer/)
+    expect(errorMessage).to.match(/amount > unlocked/)
   })
 })

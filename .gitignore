@@ -1,4 +1,5 @@
 node_modules
+.DS_STORE
 
 #Hardhat files
 cache
@@ -7,3 +8,6 @@ coverage
 coverage.*
 .env
 mnemonic.env
+
+# build files
+deployment.json

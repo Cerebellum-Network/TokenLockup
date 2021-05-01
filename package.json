@@ -5,12 +5,15 @@
   "main": "index.js",
   "scripts": {
     "compile": "npx hardhat compile",
-    "test": "npx hardhat coverage && npm run lint",
+    "test": "npx hardhat clean && npx hardhat compile && npx hardhat test && npm run lint",
+    "coverage": "npx hardhat clean && npx hardhat compile && npx hardhat coverage && npm run lint",
     "lint": "npx standard",
     "fix": "npx standard --fix",
     "dry-test": "npx hardhat test",
     "gas-cost": "npx hardhat test",
-    "deploy-rinkeby": "npx hardhat run scripts/deployment.js --network rinkeby"
+    "deploy-token-kovan": "npx hardhat clean && npx hardhat run scripts/1_deploy-token.js --network kovan && npx hardhat run scripts/2_publish_contract_definition_to_etherscan.js --network kovan",
+    "deploy-token-rinkeby": "npx hardhat clean && npx hardhat run scripts/1_deploy-token.js --network rinkeby && npx hardhat run scripts/2_publish_contract_definition_to_etherscan.js --network rinkeby",
+    "deploy-token-mainnet": "npx hardhat clean && npx hardhat run scripts/1_deploy-token.js --network mainnet && npx hardhat run scripts/2_publish_contract_definition_to_etherscan.js --network mainnet"
   },
   "repository": {
     "type": "git",
@@ -26,18 +29,18 @@
   },
   "homepage": "https://github.com/CoMakery/scheduled-release-token#readme",
   "dependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^4.0.0",
     "dotenv": "^8.2.0",
     "ethereum-waffle": "^3.3.0",
-    "ethers": "^5.1.0",
-    "hardhat": "^2.1.2",
     "openzeppelin-test-helpers": "^0.5.1",
     "solc": "^0.8.3"
   },
   "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^2.0.1",
     "chai": "^4.3.4",
+    "hardhat": "^2.2.1",
     "hardhat-gas-reporter": "^1.0.4",
     "solidity-coverage": "^0.7.16",
     "standard": "^16.0.3"
