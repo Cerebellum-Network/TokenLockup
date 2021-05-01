@@ -5,7 +5,6 @@
 // Runtime Environment's members available in the global scope.
 const hre = require('hardhat')
 const config = hre.network.config
-const fs = require('fs')
 console.log('Deploy Network: ', hre.network.name)
 console.log(config.token)
 

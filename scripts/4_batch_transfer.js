@@ -5,7 +5,6 @@
 // Runtime Environment's members available in the global scope.
 const hre = require('hardhat')
 const config = hre.network.config
-const fs = require('fs')
 console.log('Deploy Network: ', hre.network.name)
 console.log(config.token)
 
@@ -18,7 +17,7 @@ async function main () {
   // await hre.run('compile');
 
   const BatchTransfer = await hre.ethers.getContractFactory('BatchTransfer')
-  let batchTransfer = await BatchTransfer.deploy()
+  const batchTransfer = await BatchTransfer.deploy()
 
   console.log('Deployed BatchTransfer to: ', batchTransfer.address)
 
