@@ -2,11 +2,18 @@
 
 pragma solidity 0.8.3;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+// import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./ScheduleCalc.sol";
 
+// interface with ERC20 and the burn function interface from the associated Token contract
+interface IERC20Burnable is IERC20 {
+    function burn(uint256 amount) external;
+    function decimals() external view returns (uint8);
+}
+
 contract TokenLockup {
-    ERC20Burnable public token;
+    IERC20Burnable public token;
     string private _name;
     string private _symbol;
 
@@ -32,7 +39,7 @@ contract TokenLockup {
     ) {
         _name = name_;
         _symbol = symbol_;
-        token = ERC20Burnable(_token);
+        token = IERC20Burnable(_token);
 
         require(_minReleaseScheduleAmount > 0, "Min schedule amount > 0");
         minReleaseScheduleAmount = _minReleaseScheduleAmount;
