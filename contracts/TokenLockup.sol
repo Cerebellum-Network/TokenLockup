@@ -94,12 +94,12 @@ contract TokenLockup {
     function batchFundReleaseSchedule(
         address[] memory recipients,
         uint[] memory amounts,
-        uint commencementTimestamp, // unix timestamp
-        uint scheduleId
+        uint[] memory commencementTimestamps, // unix timestamp
+        uint[] memory scheduleIds
     ) external returns (bool) {
         require(amounts.length == recipients.length, "mismatched array length");
         for (uint i; i < recipients.length; i++) {
-            fundReleaseSchedule(recipients[i], amounts[i], commencementTimestamp, scheduleId);
+            fundReleaseSchedule(recipients[i], amounts[i], commencementTimestamps[i], scheduleIds[i]);
         }
 
         return true;
