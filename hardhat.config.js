@@ -107,7 +107,7 @@ module.exports = {
   gasReporter: {
     coinmarketcap: process.env.COIN_MARKET_CAP_API,
     currency: 'USD',
-    gasPrice: 120,
+    // gasPrice: 60,
     enabled: true
   },
   etherscan: {
