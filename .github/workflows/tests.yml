@@ -11,6 +11,8 @@ jobs:
       KOVAN_NETWORK_URL: ${{ secrets.KOVAN_NETWORK_URL }}
       MAINNET: "witch collapse practice feed shame open despair creek road again ice least"
       MAINNET_NETWORK_URL: ${{ secrets.MAINNET_NETWORK_URL }}
+      RINKEBY: "witch collapse practice feed shame open despair creek road again ice least"
+      RINKEBY_NETWORK_URL: ${{ secrets.KOVAN_NETWORK_URL }}
 
     steps:      
     - uses: actions/checkout@v2
