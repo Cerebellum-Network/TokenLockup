@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "compile": "npx hardhat compile",
-    "test": "npx hardhat coverage && npm run lint",
+    "test": "npx hardhat clean && npx hardhat compile && npx hardhat test && npm run lint",
+    "coverage": "npx hardhat clean && npx hardhat compile && npx hardhat coverage && npm run lint",
     "lint": "npx standard",
     "fix": "npx standard --fix",
     "dry-test": "npx hardhat test",
