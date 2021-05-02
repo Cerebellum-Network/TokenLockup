@@ -99,6 +99,20 @@ describe('TokenLockup unlock scheduling', async function () {
     await tokenLockup.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 11)
   })
 
+  it('cannot decreaseAllowance to below 0', async () => {
+    expect(await tokenLockup.connect(recipient).balanceOf(recipient.address)).to.equal(100)
+    expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
+
+    let errorMessage
+    try {
+      await tokenLockup.connect(recipient).decreaseAllowance(allowedAccount.address, 1)
+    } catch (e) {
+      errorMessage = e.message
+    }
+    expect(errorMessage).to.match(/decrease > allowance/)
+    expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
+  })
+
   it('cannot transferFrom approved amount that exceeds that locked token amount', async () => {
     expect(await tokenLockup.connect(recipient).balanceOf(recipient.address)).to.equal(100)
     expect(await tokenLockup.connect(recipient).unlockedBalanceOf(recipient.address)).to.equal(50)

@@ -183,7 +183,7 @@ contract TokenLockup {
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
     function decreaseAllowance(address spender, uint subtractedValue) external returns (bool) {
         uint currentAllowance = _allowances[msg.sender][spender];
-        require(currentAllowance >= subtractedValue); // "Insufficient allowance"
+        require(currentAllowance >= subtractedValue, "decrease > allowance");
         _approve(msg.sender, spender, _allowances[msg.sender][spender] - subtractedValue);
         return true;
     }
