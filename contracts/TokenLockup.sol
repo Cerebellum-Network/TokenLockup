@@ -82,7 +82,7 @@ contract TokenLockup {
         uint commencementTimestamp, // unix timestamp
         uint scheduleId
     ) public {
-        require(amount >= minReleaseScheduleAmount, "amount < min");
+        require(amount >= minReleaseScheduleAmount, "amount < min funding");
         require(to != address(0), "to 0 address");
         require(scheduleId < releaseSchedules.length, "bad scheduleId");
         require(amount >= releaseSchedules[scheduleId].releaseCount, "< 1 token per release");
