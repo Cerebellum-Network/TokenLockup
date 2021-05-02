@@ -86,4 +86,15 @@ describe('TokenLockup create release schedule', async function () {
 
     expect(error.message).to.match(/release > 100%/)
   })
+
+  it('must have a period duration of at least 1 second', async function () {
+    let error
+    try {
+      await tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 2, 5000, 0)
+    } catch (e) {
+      error = e
+    }
+
+    expect(error.message).to.match(/period = 0/)
+  })
 })
