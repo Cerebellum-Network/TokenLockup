@@ -153,4 +153,61 @@ describe('TokenLockup burn timelock', async function () {
     expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('100')
   })
+
+  it('must confirm the burn with confirm burn value', async () => {
+    const totalRecipientAmount = 100
+    const totalBatches = 3
+    const firstDelay = 0
+    const firstBatchBips = 800 // 8%
+    const batchDelay = 3600 * 24 * 4 // 4 days
+    const commence = await exactlyMoreThanOneDayAgo()
+
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
+      .to.equal(0)
+    expect(await tokenLockup.scheduleCount())
+      .to.equal(0)
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
+
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      totalRecipientAmount,
+      commence,
+      0 // scheduleId
+    )
+
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
+      .to.equal('8')
+
+    expect(await tokenLockup.lockedBalanceOf(recipient.address))
+      .to.equal('92')
+
+    expect(await tokenLockup.balanceOf(recipient.address))
+      .to.equal('100')
+
+    let message
+    try {
+      await tokenLockup.connect(recipient).burn(0, 2)
+    } catch (e) {
+      message = e.message
+    }
+
+    expect(message).to.match(/A burn wasn't confirmed/)
+
+    // balances do not change
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
+      .to.equal('8')
+
+    expect(await tokenLockup.lockedBalanceOf(recipient.address))
+      .to.equal('92')
+
+    expect(await tokenLockup.balanceOf(recipient.address))
+      .to.equal('100')
+  })
 })
