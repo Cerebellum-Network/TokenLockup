@@ -158,7 +158,7 @@ contract TokenLockup {
     }
 
     function transferFrom(address from, address to, uint value) external returns (bool) {
-        require(_allowances[from][msg.sender] >= value); // "Insufficient allowance to transferFrom"
+        require(_allowances[from][msg.sender] >= value, "value > allowance");
         _allowances[from][msg.sender] -= value;
         return _transfer(from, to, value);
     }

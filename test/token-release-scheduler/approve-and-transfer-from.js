@@ -114,4 +114,20 @@ describe('TokenLockup unlock scheduling', async function () {
     }
     expect(errorMessage).to.match(/amount > unlocked/)
   })
+
+  it('cannot transferFrom amount that exceeds approved amount', async () => {
+    expect(await tokenLockup.connect(recipient).balanceOf(recipient.address)).to.equal(100)
+    expect(await tokenLockup.connect(recipient).unlockedBalanceOf(recipient.address)).to.equal(50)
+    expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
+
+    await tokenLockup.connect(recipient).approve(allowedAccount.address, 1) // enough unlocked, not enough for transfer
+    expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(1)
+    let errorMessage
+    try {
+      await tokenLockup.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 2)
+    } catch (e) {
+      errorMessage = e.message
+    }
+    expect(errorMessage).to.match(/value > allowance/)
+  })
 })
