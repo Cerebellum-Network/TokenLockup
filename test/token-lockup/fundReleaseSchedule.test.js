@@ -59,6 +59,44 @@ describe('TokenLockup unlock scheduling', async function () {
     )
   })
 
+  it('fundReleaseRelease schedule emits a ScheduleFunded event', async () => {
+    const totalRecipientAmount = 1000
+    const totalBatches = 3
+    const firstDelay = 0
+    const firstBatchBips = 800 // 8%
+    const batchDelay = 3600 * 24 * 4 // 4 days
+    const commence = await exactlyMoreThanOneDayAgo()
+
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
+      .to.equal(0)
+    expect(await tokenLockup.scheduleCount())
+      .to.equal(0)
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
+
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    await expect(tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      490,
+      commence,
+      0 // scheduleId
+    )).to.emit(tokenLockup, 'ScheduleFunded')
+      .withArgs(reserveAccount.address, recipient.address, 0, 490, commence, 0)
+
+    await expect(tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      510,
+      commence,
+      0 // scheduleId
+    )).to.emit(tokenLockup, 'ScheduleFunded')
+      .withArgs(reserveAccount.address, recipient.address, 0, 510, commence, 1)
+  })
+
   it('timelock creation with immediately unlocked tokens', async () => {
     const totalRecipientAmount = 100
     const totalBatches = 3

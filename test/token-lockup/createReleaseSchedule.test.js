@@ -46,6 +46,12 @@ describe('TokenLockup create release schedule', async function () {
     expect(await tokenLockup.scheduleCount()).to.equal(2)
   })
 
+  it('emits a CreateSchedule event', async () => {
+    await expect(tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1))
+      .to.emit(tokenLockup, 'ScheduleCreated')
+      .withArgs(reserveAccount.address, 0)
+  })
+
   it('must have at least 1 release', async function () {
     let error
     try {

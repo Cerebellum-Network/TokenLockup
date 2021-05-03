@@ -26,6 +26,8 @@ contract TokenLockup {
 
     event Approval(address indexed from, address indexed spender, uint amount);
     event TimelockBurned(address indexed from, uint timelockId);
+    event ScheduleCreated(address indexed from, uint scheduleId);
+    event ScheduleFunded(address indexed from, address indexed to, uint indexed scheduleId, uint amount, uint commencementTimestamp, uint timelockId);
 
     /*  The constructor that specifies the token, name and symbol
         The name should specify that it is an unlock contract
@@ -72,6 +74,7 @@ contract TokenLockup {
                 periodBetweenReleasesInSeconds
             ));
 
+        emit ScheduleCreated(msg.sender, unlockScheduleId);
         // returning the index of the newly added schedule
         return releaseSchedules.length - 1;
     }
@@ -96,6 +99,8 @@ contract TokenLockup {
         timelock.totalAmount = amount;
 
         timelocks[to].push(timelock);
+
+        emit ScheduleFunded(msg.sender, to, scheduleId, amount, commencementTimestamp, timelocks[to].length - 1);
     }
 
     function batchFundReleaseSchedule(
