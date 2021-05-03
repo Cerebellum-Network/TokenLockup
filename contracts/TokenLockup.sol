@@ -268,7 +268,7 @@ contract TokenLockup {
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
     function _approve(address owner, address spender, uint amount) internal {
         require(owner != address(0));
-        require(spender != address(0));
+        require(spender != address(0), "spender is 0 address");
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);

@@ -144,4 +144,26 @@ describe('TokenLockup unlock scheduling', async function () {
     }
     expect(errorMessage).to.match(/value > allowance/)
   })
+
+  it('cannot approve transfer to the 0x0 address', async () => {
+    let errorMessage
+    try {
+      await tokenLockup.connect(recipient).approve('0x0000000000000000000000000000000000000000', 1) // enough unlocked, not enough for transfer
+    } catch (e) {
+      errorMessage = e.message
+    }
+    expect(errorMessage).to.match(/spender is 0 address/)
+    expect(await tokenLockup.allowance(recipient.address, allowedAccount.address)).to.equal(0)
+  })
+
+  it('cannot approve transfer from the 0x0 address', async () => {
+    let errorMessage
+    try {
+      await tokenLockup.connect('0x0000000000000000000000000000000000000000').approve(recipient.address, 1) // enough unlocked, not enough for transfer
+    } catch (e) {
+      errorMessage = e.message
+    }
+    expect(errorMessage).to.match(/VoidSigner cannot sign transactions/)
+    expect(await tokenLockup.allowance(recipient.address, allowedAccount.address)).to.equal(0)
+  })
 })
