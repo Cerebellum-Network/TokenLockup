@@ -76,6 +76,9 @@ describe('TokenLockup burn timelock', async function () {
       0 // scheduleId
     )
 
+    let timelocks = await tokenLockup.timelockOf(recipient.address,0)
+    expect(timelocks.length).to.equal(undefined)
+
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('8')
 
@@ -95,6 +98,14 @@ describe('TokenLockup burn timelock', async function () {
 
     expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('0')
+
+    let errorMessage
+    try {
+      await tokenLockup.timelockOf(recipient.address, 0)
+    } catch (e) {
+      errorMessage = e.message
+    }
+    expect(errorMessage).to.match(/revert/)
   })
 
   it('cannot burn non existant timelock - raises exception', async () => {

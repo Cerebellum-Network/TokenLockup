@@ -277,4 +277,8 @@ contract TokenLockup {
     function scheduleCount() external view returns (uint count) {
         return releaseSchedules.length;
     }
+
+    function timelockOf(address who, uint index) public returns(Timelock memory timelock) {
+        return timelocks[who][index];
+    }
 }
