@@ -76,8 +76,9 @@ describe('TokenLockup burn timelock', async function () {
       0 // scheduleId
     )
 
-    let timelocks = await tokenLockup.timelockOf(recipient.address,0)
-    expect(timelocks.length).to.equal(undefined)
+    let timelock = await tokenLockup.timelockOf(recipient.address,0)
+    console.log(Object.keys(timelock))
+    expect(await tokenLockup.timelockCountOf(recipient.address)).to.equal(1)
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('8')
@@ -99,6 +100,7 @@ describe('TokenLockup burn timelock', async function () {
     expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('0')
 
+    expect(await tokenLockup.timelockCountOf(recipient.address)).to.equal(0)
     let errorMessage
     try {
       await tokenLockup.timelockOf(recipient.address, 0)

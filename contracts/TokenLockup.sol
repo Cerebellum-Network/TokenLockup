@@ -278,7 +278,11 @@ contract TokenLockup {
         return releaseSchedules.length;
     }
 
-    function timelockOf(address who, uint index) public returns(Timelock memory timelock) {
+    function timelockOf(address who, uint index) public view returns(Timelock memory timelock) {
         return timelocks[who][index];
+    }
+
+    function timelockCountOf(address who) public view returns(uint) {
+        return timelocks[who].length;
     }
 }
