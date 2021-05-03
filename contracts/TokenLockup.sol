@@ -238,9 +238,9 @@ contract TokenLockup {
                 // if the remainingTransfer is more than the unlocked balance use it all
                 remainingTransfer -= unlockedBalanceOfTimelock(from, i);
                 timelocks[from][i].tokensTransferred += unlockedBalanceOfTimelock(from, i);
+            } else {
                 // if the remainingTransfer is less than or equal to the unlocked balance
                 // use part or all and exit the loop
-            } else if (remainingTransfer <= unlockedBalanceOfTimelock(from, i)) {
                 timelocks[from][i].tokensTransferred += remainingTransfer;
                 remainingTransfer = 0;
                 break;
