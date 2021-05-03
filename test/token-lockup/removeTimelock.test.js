@@ -183,7 +183,7 @@ describe('TokenLockup burn timelock', async function () {
 
     // burn the middle timelock
     await expect(tokenLockup.connect(accounts[1]).burn(1, 2))
-      .to.emit(tokenLockup, 'ScheduleBurned')
+      .to.emit(tokenLockup, 'TimelockBurned')
       .withArgs(recipient.address, 1)
     expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(2)
     expect((await tokenLockup.timelockOf(recipient1Address, 0)).totalAmount).to.equal(100)
@@ -192,7 +192,7 @@ describe('TokenLockup burn timelock', async function () {
 
     // burn the end timelock
     await expect(tokenLockup.connect(accounts[1]).burn(1, 2))
-      .to.emit(tokenLockup, 'ScheduleBurned')
+      .to.emit(tokenLockup, 'TimelockBurned')
       .withArgs(recipient.address, 1)
     expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(1)
     expect((await tokenLockup.timelockOf(recipient1Address, 0)).totalAmount).to.equal(100)
@@ -200,7 +200,7 @@ describe('TokenLockup burn timelock', async function () {
 
     // burn the last remaining timelock
     await expect(tokenLockup.connect(accounts[1]).burn(0, 1))
-      .to.emit(tokenLockup, 'ScheduleBurned')
+      .to.emit(tokenLockup, 'TimelockBurned')
       .withArgs(recipient.address, 0)
     expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(0)
     expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(0)
@@ -392,7 +392,7 @@ describe('TokenLockup burn timelock', async function () {
     // burn the middle timelock with 200 tokens in it
 
     await expect(tokenLockup.connect(accounts[1]).burn(1, 2))
-      .to.emit(tokenLockup, 'ScheduleBurned')
+      .to.emit(tokenLockup, 'TimelockBurned')
       .withArgs(recipient.address, 1)
 
     expect(await tokenLockup.totalSupply()).to.equal(523)
@@ -420,7 +420,7 @@ describe('TokenLockup burn timelock', async function () {
 
     // burn the last lockup with 300 tokens leaving the 100 - 10 value lockup
     await expect(tokenLockup.connect(accounts[1]).burn(1, 2))
-      .to.emit(tokenLockup, 'ScheduleBurned')
+      .to.emit(tokenLockup, 'TimelockBurned')
       .withArgs(recipient.address, 1)
     expect(await tokenLockup.totalSupply()).to.equal(213)
     expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(1)
@@ -446,7 +446,7 @@ describe('TokenLockup burn timelock', async function () {
 
     // burn the last timelock
     await expect(tokenLockup.connect(accounts[1]).burn(0, 1))
-      .to.emit(tokenLockup, 'ScheduleBurned')
+      .to.emit(tokenLockup, 'TimelockBurned')
       .withArgs(recipient.address, 0)
     expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(0)
     expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(0)

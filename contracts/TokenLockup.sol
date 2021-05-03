@@ -25,7 +25,7 @@ contract TokenLockup {
     mapping(address => mapping(address => uint)) internal _allowances;
 
     event Approval(address indexed from, address indexed spender, uint amount);
-    event ScheduleBurned(address indexed from, uint timelockId);
+    event TimelockBurned(address indexed from, uint timelockId);
 
     /*  The constructor that specifies the token, name and symbol
         The name should specify that it is an unlock contract
@@ -221,7 +221,7 @@ contract TokenLockup {
         // delete the timelock on the end
         timelocks[msg.sender].pop();
 
-        emit ScheduleBurned(msg.sender, timelockIndex);
+        emit TimelockBurned(msg.sender, timelockIndex);
     }
 
     function _transfer(address from, address to, uint value) internal returns (bool) {
