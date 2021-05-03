@@ -4,10 +4,6 @@ const { expect } = chai
 const { solidity } = require('ethereum-waffle')
 chai.use(solidity)
 
-async function currentTimestamp (offsetInSeconds = 0) {
-  return (await hre.ethers.provider.getBlock()).timestamp + offsetInSeconds
-}
-
 describe('TokenLockup get timelock info', async function () {
   let tokenLockup, token, reserveAccount, recipient, accounts
   const decimals = 10
