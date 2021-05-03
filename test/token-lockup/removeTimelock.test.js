@@ -191,6 +191,10 @@ describe('TokenLockup burn timelock', async function () {
       .withArgs(recipient.address, 0)
     expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(0)
     expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(0)
+
+
+    expect(await tokenLockup.timelockCountOf(recipient2Address)).to.equal(1)
+    expect(await tokenLockup.balanceOf(recipient2Address)).to.equal(123)
   })
 
   it('cannot burn non existent timelock - raises exception', async () => {
