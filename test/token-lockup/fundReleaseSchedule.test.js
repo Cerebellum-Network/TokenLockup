@@ -191,4 +191,44 @@ describe('TokenLockup unlock scheduling', async function () {
 
     expect(errorMessage).to.match(/amount < min funding/)
   })
+
+  it('cannot specify non existent schedule id', async () => {
+    const minReleaseScheduleAmount = 100
+    const tokenLockup = await TokenLockup.deploy(
+      token.address,
+      'Xavier Yolo Zeus Token Lockup Release Scheduler',
+      'XYZ Lockup',
+      minReleaseScheduleAmount // low minimum to force rounding issues
+    )
+
+    const totalRecipientAmount = minReleaseScheduleAmount
+    const totalBatches = 1
+    const firstDelay = 0
+    const firstBatchBips = 100 * 100
+    const batchDelay = 1
+    const commence = 0
+
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
+
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    let errorMessage
+    try {
+      await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+        recipient.address,
+        totalRecipientAmount,
+        commence,
+        1 // scheduleId
+      )
+    } catch (e) {
+      errorMessage = e.message
+    }
+
+    expect(errorMessage).to.match(/bad scheduleId/)
+  })
 })
