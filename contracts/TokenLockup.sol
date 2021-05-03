@@ -263,7 +263,6 @@ contract TokenLockup {
         timelocks[msg.sender][timelockId].tokensTransferred += value;
         token.transfer(to, value);
         return true;
-        // TODO: test return value
     }
 
     function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, uint scheduleId) public view returns (uint unlocked) {

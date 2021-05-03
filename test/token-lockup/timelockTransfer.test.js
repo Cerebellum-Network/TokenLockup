@@ -93,6 +93,23 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
       .to.equal('93')
   })
 
+  it('returns true after transfer', async () => {
+    const commence = await exactlyMoreThanOneDayAgo()
+
+    await token.connect(reserveAccount).approve(tokenLockup.address, 200)
+
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      100,
+      commence,
+      0 // scheduleId
+    )
+
+    expect(await tokenLockup.connect(recipient)
+      .callStatic.transferTimelock(accounts[2].address, 7, 0))
+      .to.equal(true)
+  })
+
   it('cannot transfer more than the unlocked balance', async () => {
     const commence = await exactlyMoreThanOneDayAgo()
 
