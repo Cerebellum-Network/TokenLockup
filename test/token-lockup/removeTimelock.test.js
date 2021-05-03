@@ -76,8 +76,6 @@ describe('TokenLockup burn timelock', async function () {
       0 // scheduleId
     )
 
-    let timelock = await tokenLockup.timelockOf(recipient.address,0)
-    console.log(Object.keys(timelock))
     expect(await tokenLockup.timelockCountOf(recipient.address)).to.equal(1)
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
@@ -110,7 +108,92 @@ describe('TokenLockup burn timelock', async function () {
     expect(errorMessage).to.match(/revert/)
   })
 
-  it('cannot burn non existant timelock - raises exception', async () => {
+  it('can burn multiple timelocks correctly', async () => {
+    const totalRecipientAmount = 1000
+    const totalBatches = 3
+    const firstDelay = 0
+    const firstBatchBips = 800 // 8%
+    const batchDelay = 3600 * 24 * 4 // 4 days
+    const commence = await exactlyMoreThanOneDayAgo()
+    const recipient1Address = accounts[1].address
+    const recipient2Address = accounts[2].address
+
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
+      .to.equal(0)
+    expect(await tokenLockup.scheduleCount())
+      .to.equal(0)
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
+
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    // fund 3 schedules for recipient 1
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient1Address,
+      100,
+      commence,
+      0
+    )
+
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient1Address,
+      200,
+      commence,
+      0
+    )
+
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient1Address,
+      300,
+      commence,
+      0
+    )
+
+    // fund 1 schedules for recipient 2
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient2Address,
+      123,
+      commence,
+      0
+    )
+
+    expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(3)
+    expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(600)
+
+    expect(await tokenLockup.timelockCountOf(recipient2Address)).to.equal(1)
+    expect(await tokenLockup.balanceOf(recipient2Address)).to.equal(123)
+    // let timelock = await tokenLockup.timelockOf(recipient1Address,0)
+
+    // burn the middle timelock
+    await expect(tokenLockup.connect(accounts[1]).burn(1, 2))
+      .to.emit(tokenLockup, 'ScheduleBurned')
+      .withArgs(recipient.address, 1)
+    expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(2)
+    expect((await tokenLockup.timelockOf(recipient1Address, 0)).totalAmount).to.equal(100)
+    expect((await tokenLockup.timelockOf(recipient1Address, 1)).totalAmount).to.equal(300)
+    expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(400)
+
+    // burn the end timelock
+    await expect(tokenLockup.connect(accounts[1]).burn(1, 2))
+      .to.emit(tokenLockup, 'ScheduleBurned')
+      .withArgs(recipient.address, 1)
+    expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(1)
+    expect((await tokenLockup.timelockOf(recipient1Address, 0)).totalAmount).to.equal(100)
+    expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(100)
+
+    // burn the last remaining timelock
+    await expect(tokenLockup.connect(accounts[1]).burn(0, 1))
+      .to.emit(tokenLockup, 'ScheduleBurned')
+      .withArgs(recipient.address, 0)
+    expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(0)
+    expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(0)
+  })
+
+  it('cannot burn non existent timelock - raises exception', async () => {
     const totalRecipientAmount = 100
     const totalBatches = 3
     const firstDelay = 0

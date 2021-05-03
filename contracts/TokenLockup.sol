@@ -9,6 +9,7 @@ import "./ScheduleCalc.sol";
 // interface with ERC20 and the burn function interface from the associated Token contract
 interface IERC20Burnable is IERC20 {
     function burn(uint256 amount) external;
+
     function decimals() external view returns (uint8);
 }
 
@@ -213,7 +214,12 @@ contract TokenLockup {
         // actually burning the remaining tokens from the unlock
         token.burn(lockedBalanceOfTimelock(msg.sender, timelockIndex) + unlockedBalanceOfTimelock(msg.sender, timelockIndex));
 
-        removeTimelock(msg.sender, timelockIndex);
+        uint lastIndex = timelocks[msg.sender].length - 1;
+        if (lastIndex != timelockIndex) {
+            timelocks[msg.sender][timelockIndex] = timelocks[msg.sender][timelocks[msg.sender].length - 1];
+        }
+
+        timelocks[msg.sender].pop();
         emit ScheduleBurned(msg.sender, timelockIndex);
     }
 
@@ -225,7 +231,7 @@ contract TokenLockup {
         // transfer from unlocked tokens
         for (uint i = 0; i < timelocks[from].length; i++) {
             // if the timelock has no value left
-            if(timelocks[from][i].tokensTransferred == timelocks[from][i].totalAmount) {
+            if (timelocks[from][i].tokensTransferred == timelocks[from][i].totalAmount) {
                 continue;
             } else if (remainingTransfer > unlockedBalanceOfTimelock(from, i)) {
                 // if the remainingTransfer is more than the unlocked balance use it all
@@ -250,19 +256,12 @@ contract TokenLockup {
         require(unlockedBalanceOfTimelock(msg.sender, timelockId) >= value, "amount > unlocked");
         timelocks[msg.sender][timelockId].tokensTransferred += value;
         token.transfer(to, value);
-        return true; // TODO: test return value
+        return true;
+        // TODO: test return value
     }
 
     function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, uint scheduleId) public view returns (uint unlocked) {
         return ScheduleCalc.calculateUnlocked(commencedTimestamp, currentTimestamp, amount, releaseSchedules[scheduleId]);
-    }
-
-    function removeTimelock(address recipient, uint releaseIndex) internal {
-        // If the timelock to remove is the last one, just pop it, otherwise move the last one over the one to remove
-        if (timelocks[recipient].length - 1 == releaseIndex) {
-            timelocks[recipient][releaseIndex] = timelocks[recipient][timelocks[recipient].length - 1];
-        }
-        timelocks[recipient].pop();
     }
 
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
@@ -278,11 +277,11 @@ contract TokenLockup {
         return releaseSchedules.length;
     }
 
-    function timelockOf(address who, uint index) public view returns(Timelock memory timelock) {
+    function timelockOf(address who, uint index) public view returns (Timelock memory timelock) {
         return timelocks[who][index];
     }
 
-    function timelockCountOf(address who) public view returns(uint) {
+    function timelockCountOf(address who) public view returns (uint) {
         return timelocks[who].length;
     }
 }
