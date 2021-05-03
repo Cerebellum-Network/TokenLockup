@@ -2,13 +2,13 @@
 
 pragma solidity 0.8.3;
 
-// import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./ScheduleCalc.sol";
 
 // interface with ERC20 and the burn function interface from the associated Token contract
 interface IERC20Burnable is IERC20 {
     function burn(uint256 amount) external;
+
     function decimals() external view returns (uint8);
 }
 
@@ -25,7 +25,9 @@ contract TokenLockup {
     mapping(address => mapping(address => uint)) internal _allowances;
 
     event Approval(address indexed from, address indexed spender, uint amount);
-    event ScheduleBurned(address indexed from, uint timelockId);
+    event TimelockBurned(address indexed from, uint timelockId);
+    event ScheduleCreated(address indexed from, uint scheduleId);
+    event ScheduleFunded(address indexed from, address indexed to, uint indexed scheduleId, uint amount, uint commencementTimestamp, uint timelockId);
 
     /*  The constructor that specifies the token, name and symbol
         The name should specify that it is an unlock contract
@@ -72,6 +74,7 @@ contract TokenLockup {
                 periodBetweenReleasesInSeconds
             ));
 
+        emit ScheduleCreated(msg.sender, unlockScheduleId);
         // returning the index of the newly added schedule
         return releaseSchedules.length - 1;
     }
@@ -82,7 +85,7 @@ contract TokenLockup {
         uint commencementTimestamp, // unix timestamp
         uint scheduleId
     ) public {
-        require(amount >= minReleaseScheduleAmount, "amount < min");
+        require(amount >= minReleaseScheduleAmount, "amount < min funding");
         require(to != address(0), "to 0 address");
         require(scheduleId < releaseSchedules.length, "bad scheduleId");
         require(amount >= releaseSchedules[scheduleId].releaseCount, "< 1 token per release");
@@ -96,6 +99,8 @@ contract TokenLockup {
         timelock.totalAmount = amount;
 
         timelocks[to].push(timelock);
+
+        emit ScheduleFunded(msg.sender, to, scheduleId, amount, commencementTimestamp, timelocks[to].length - 1);
     }
 
     function batchFundReleaseSchedule(
@@ -158,7 +163,7 @@ contract TokenLockup {
     }
 
     function transferFrom(address from, address to, uint value) external returns (bool) {
-        require(_allowances[from][msg.sender] >= value); // "Insufficient allowance to transferFrom"
+        require(_allowances[from][msg.sender] >= value, "value > allowance");
         _allowances[from][msg.sender] -= value;
         return _transfer(from, to, value);
     }
@@ -183,7 +188,7 @@ contract TokenLockup {
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
     function decreaseAllowance(address spender, uint subtractedValue) external returns (bool) {
         uint currentAllowance = _allowances[msg.sender][spender];
-        require(currentAllowance >= subtractedValue); // "Insufficient allowance"
+        require(currentAllowance >= subtractedValue, "decrease > allowance");
         _approve(msg.sender, spender, _allowances[msg.sender][spender] - subtractedValue);
         return true;
     }
@@ -208,13 +213,20 @@ contract TokenLockup {
         require(timelockIndex < timelocks[msg.sender].length, "No schedule");
 
         // this also protects from overflow below
-        require(confirmationIdPlusOne == timelockIndex + 1, "A burn wasn't confirmed");
+        require(confirmationIdPlusOne == timelockIndex + 1, "Burn not confirmed");
 
         // actually burning the remaining tokens from the unlock
         token.burn(lockedBalanceOfTimelock(msg.sender, timelockIndex) + unlockedBalanceOfTimelock(msg.sender, timelockIndex));
 
-        removeTimelock(msg.sender, timelockIndex);
-        emit ScheduleBurned(msg.sender, timelockIndex);
+        // overwrite the timelock to delete with the timelock on the end which will be discarded
+        // if the timelock to delete is on the end, it will just be deleted in the step after the if statement
+        if (timelocks[msg.sender].length - 1 != timelockIndex) {
+            timelocks[msg.sender][timelockIndex] = timelocks[msg.sender][timelocks[msg.sender].length - 1];
+        }
+        // delete the timelock on the end
+        timelocks[msg.sender].pop();
+
+        emit TimelockBurned(msg.sender, timelockIndex);
     }
 
     function _transfer(address from, address to, uint value) internal returns (bool) {
@@ -225,15 +237,15 @@ contract TokenLockup {
         // transfer from unlocked tokens
         for (uint i = 0; i < timelocks[from].length; i++) {
             // if the timelock has no value left
-            if(timelocks[from][i].tokensTransferred == timelocks[from][i].totalAmount) {
+            if (timelocks[from][i].tokensTransferred == timelocks[from][i].totalAmount) {
                 continue;
             } else if (remainingTransfer > unlockedBalanceOfTimelock(from, i)) {
                 // if the remainingTransfer is more than the unlocked balance use it all
                 remainingTransfer -= unlockedBalanceOfTimelock(from, i);
                 timelocks[from][i].tokensTransferred += unlockedBalanceOfTimelock(from, i);
+            } else {
                 // if the remainingTransfer is less than or equal to the unlocked balance
                 // use part or all and exit the loop
-            } else if (remainingTransfer <= unlockedBalanceOfTimelock(from, i)) {
                 timelocks[from][i].tokensTransferred += remainingTransfer;
                 remainingTransfer = 0;
                 break;
@@ -250,25 +262,17 @@ contract TokenLockup {
         require(unlockedBalanceOfTimelock(msg.sender, timelockId) >= value, "amount > unlocked");
         timelocks[msg.sender][timelockId].tokensTransferred += value;
         token.transfer(to, value);
-        return true; // TODO: test return value
+        return true;
     }
 
     function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, uint scheduleId) public view returns (uint unlocked) {
         return ScheduleCalc.calculateUnlocked(commencedTimestamp, currentTimestamp, amount, releaseSchedules[scheduleId]);
     }
 
-    function removeTimelock(address recipient, uint releaseIndex) internal {
-        // If the timelock to remove is the last one, just pop it, otherwise move the last one over the one to remove
-        if (timelocks[recipient].length - 1 == releaseIndex) {
-            timelocks[recipient][releaseIndex] = timelocks[recipient][timelocks[recipient].length - 1];
-        }
-        timelocks[recipient].pop();
-    }
-
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
     function _approve(address owner, address spender, uint amount) internal {
         require(owner != address(0));
-        require(spender != address(0));
+        require(spender != address(0), "spender is 0 address");
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
@@ -276,5 +280,13 @@ contract TokenLockup {
 
     function scheduleCount() external view returns (uint count) {
         return releaseSchedules.length;
+    }
+
+    function timelockOf(address who, uint index) public view returns (Timelock memory timelock) {
+        return timelocks[who][index];
+    }
+
+    function timelockCountOf(address who) public view returns (uint) {
+        return timelocks[who].length;
     }
 }

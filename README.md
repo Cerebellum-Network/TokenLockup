@@ -1,6 +1,6 @@
 # Token Release Scheduler
 
-Status: alpha - not feature complete or audited yet
+Status: feature complete, audit not complete
 
 ## Overview
 
@@ -33,10 +33,9 @@ This is an Ethereum ERC-20 standard compatible token and scheduled release "vest
 
 Clone this repo and `cd` into root. Then:
 * `npm install` to setup node libraries
-* `npm test` runs all tests and outputs code coverage
-* `npm run gas-cost` runs all tests and outputs gas cost for functions (needs a Coinmarket cap private key) 
-* `npm run fix` runs the linter and fixes the `standardjs` lint offenses or `npm run lint` to lint without fixing.
-
+* `npm test` runs all tests and outputs code coverage and gas cost estimate (needs a Coinmarket cap private key for USD cost)
+* `npm run coverage` runs all tests
+* `npm run fix` runs the linter and fixes the `standardjs` lint offenses or `npm run lint` to lint without fixing
 
 # Token Smart Contract
 
@@ -90,7 +89,7 @@ function decimals() public view returns (uint8);
 The burn function can only be applied to the `msg.sender` account. This follows the principle that there are no special contract roles that could burn another token holders tokens.
 
 ```solidity
-function burn(uint256 amount) public;
+function burn(uint256 amount) external;
 ```
 
 <div style="page-break-after: always; break-after: page;"></div>
@@ -99,7 +98,7 @@ function burn(uint256 amount) public;
 
 All tokens are minted on deployment. `mint()` cannot be called after deployment. This means that the ERC20 totalSupply() can only remain constant or decrease when accounts call `burn()` on their own tokens.
 
-# Scheduled Release Smart Contract
+# TokenLockup Smart Contract
 
 ### Lockup Schedules Control Circulating Supply Instead Of Minting
 
@@ -107,38 +106,26 @@ Smart contract enforced lockup schedules are used to control the circulating sup
 
 The lockup period implementation lowers gas fees by referring to common release schedule tables and using unlock calculations that do not require updating smart contract state for time dependent lockups.
 
-## Lockup Period Schedules
+## Define A Release Schedule
 
 Lockup period schedules may be configured and funded without a central admin role and from any address. This empowers reserve managers, crowdfunding portals and others to enforce on chain lockup schedules.
 
+Anyone can create release schedule. Schedules can be reused with different commencement dates and amounts.
+
 ```solidity
-// DRAFT PSEUDOCODE
-contract TokenLockup {
-  struct ReleaseSchedule {
-    uint releaseCount;
-    uint delayUntilFirstReleaseInSeconds;
-    uint initialReleasePortionInBips;
-    uint periodBetweenReleasesInSeconds;
-  } 
+function createReleaseSchedule(
+    uint releaseCount, // total number of releases including any initial "cliff'
+    uint delayUntilFirstReleaseInSeconds, // "cliff" or 0 for immediate relase
+    uint initialReleasePortionInBips, // in 100ths of 1%
+    uint periodBetweenReleasesInSeconds
+)
+external
+returns (uint unlockScheduleId)
+```
 
-  mapping(uint => ReleaseSchedule) public releaseSchedules;
-
-  uint scheduleCount;
-
-  function createReleaseSchedule(
-      uint releaseCount, // total number of releases including any initial "cliff'
-      uint delayUntilFirstReleaseInSeconds, // "cliff" or 0 for immediate relase
-      uint initialReleasePortionInBips, // in 100ths of 1%
-      uint periodBetweenReleasesInSeconds
-    ) public returns (uint unlockScheduleId) {
-      // validate unlock totals 100%
-      uint scheduleId = scheduleCount++;
-      releaseSchedules[scheduleId] = ReleaseSchedule(...);
-      return scheduleId;
-  }
-  
-  //...
-}
+When a release schedule is created it emits an event with the `scheduleId`
+```solidity
+event ScheduleCreated(address indexed from, uint scheduleId);
 ```
 
 ### Implementation Details
@@ -146,50 +133,51 @@ contract TokenLockup {
 * The date is in unix timestamp format. The unlock time granularity is intended to be days roughly. The roughly 900 second blocktime variance for Ethereum block timestamp should be expected. However it is not an issued for a time specificity tolernace of roughly days.
 * The percentage is stored as 100ths of a percent - bips. The maximum specificity is multiple of 0.0001 represented as uint `1` bip.
 
-## Fund A Release Schedule
+## Funding A Release Schedule
 
-A transfer can reference a release schedule by Id and that schedule will be applied.
+A transfer can reference a release `scheduleId` to fund for a recipient. The release schedule controls when tokens will be unlocked calculated from a commencementTimestamp in the past, present or future. This flexible scheduling allows reuse of schedules for promises that may have been made during project formation, a funding event or that exist in legal documents.
 
 ```solidity
-fundReleaseSchedule(
-	address to, 
-	uint amount,
-	uint commencementDate,
-	uint scheduleId
-)
+function fundReleaseSchedule(
+    address to,
+    uint amount,
+    uint commencementTimestamp, // unix timestamp
+    uint scheduleId
+) public 
 ```
 
 
 ## Example Release Schedule
 
-Create the schedule:
+Here's an example of creating a release schedule using the Ethereum Ethers.js library:
 
-```solidity
-// DRAFT PSEUDOCODE
-
-createReleaseSchedule(
-	4, // total number of releases including any initial "cliff'
-	0, // 0 time delay until first release (immediate release)
-	800, // the initial portion released in 100ths of 1%
-	90.days // time between releases
+```javascript
+await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+    4, // total number of releases including any initial "cliff'
+    0, // 0 time delay until first release (immediate release)
+    800, // the initial portion released in 100ths of 1%
+    (90 * 24 * 60 * 60) // time between releases expressed in seconds = 90 days
 )
+
 // returns id 1 after creating the release schedule
 ```
 
-Create a transfer with the release schedule
+This is an example of funding the release schedule for a specific recipient:
 
-```solidity
-// DRAFT PSEUDOCODE
-
-transferWithReleaseSchedule(
-	recipientAddress
-  100, // amount of 100 tokens
-	toUnixtimestamp(2021-06-01), // the commencement date unix timestamp
-	1 // the schedule id from above
+```javascript
+await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+    recipient.address,
+    100,
+    Math.floor(Date.now() / 1000), // the commencement date unix timestamp in seconds
+    1 // scheduleId
 )
 ```
 
-The tokens can be transfered from the `recipientAddress` with the `transfer()` function on this schedule.
+There are a lot more usage examples in the `tests` folder.
+
+## Transferring Unlocked Tokens
+
+In the release schedule funding example above, tokens can be transfered by the `recipient` account using the `transfer()` function. Their tokens are unlocked on this schedule:
 
 | Release Schedule                                             | Percentage (bips)               | Release # | Amount    |
 | ------------------------------------------------------------ | ------------------------------- | --------- | --------- |
@@ -220,7 +208,7 @@ transfer(to, amount)
 
 ## Checking Total Balances
 
-Check total locked and unlocked tokens for an address:
+These functions allow you to check total locked and unlocked tokens for an address:
 
 ```solidity
 function balanceOf(address who) external view returns (uint256);
@@ -252,33 +240,64 @@ Check total locked and unlocked tokens for an address:
 function viewTimelock(address who, index) external view returns (uint amount, uint scheduleId, uint commencementDate, uint unlockedBalance, uint lockedBalance);
 ```
 
-## Griefer Protection 
+## Griefer Protection
+
+"Griefing" is bad faith use of a system to enrage, troll or cause damage to other users. The contract has no centralized control and implements self service functions to avoid possible griefing attacks by other contract users. 
+
+The primary predicted griefing attack vector would be overloading recipients with spam release schedule timelocks. To avoid this the contract makes this attack costly in tokens and bypassable through the timelock `burn()` and `transferTimelock()` functions.
 
 ### Minimimum Release Schedule Amount
 
 To avoid increasing computation requirements, gas cost for transfers and exceeding max gas for a transaction, each transferWithRelease schedule amount must be for an amount of tokens `> minReleaseScheduleAmount`.
+
+Each release period must also release at least one token. Release periods can be as small as one second since they are calculated and do not require storage updates on the blockchain until the time of transfer.
 
 ### Griefer Schedule Slashing
 
 If the account has received an unwanted vesting lockup, recipient can burn the balance and remove the schedule of the `msg.sender` with:
 
 ```solidity
-burn(scheduleIndex)
+function burn(uint timelockIndex, uint confirmationIdPlusOne) public
 ```
+
+Schedules must be funded with the `minReleaseScheduleAmount` and this function call burns the attackers tokens and costs the attacker money.
 
 ### Individual Schedule Transfer
 
-To avoid the possibility that a a recipient might have too many release schedules to calculate in the transfer function, individual release schedules can be separately with:
+To avoid the possibility that a a recipient might have too many release schedules to calculate in the transfer function, individual release schedules can be separately transferred with:
 
 ```solidity
-transfer(to, amount, scheduleId)
+function transferTimelock(address to, uint value, uint timelockId) public returns (bool) 
 ```
-
-## 
 
 ## Gas Optimization
 
-To reduce gas fees the schedule is referenced by a single ID. Unlocked tokens are calculated using a formula. This keeps each transfer from requiring it's own vesting schedule data storage and drops the number of SSTORE values from an array of dates and amounts per transaction (`2n SSTORE values) to just an amount, a commencementDate and a scheduleId value (`3` SSTORE values).
+To reduce gas fees, reusable schedules are referenced by a single ID. Unlocked tokens are calculated using a formula. This keeps each transfer from requiring it's own vesting schedule data storage and drops the number of SSTORE values required.
 
-Since each SSTORE as of today costs an estimated `$3.45` in ETH. Optimizations could save hundreds of thousands of dollars for vesting schedules with many dates transferred to thousands of people. For example a 1 year monthly vesting schedule with 12 dates would need 3 SSTORE values for the amount and the schedule id (`$10.35) instead of 24 SSTORE values (`$82.80`) for 12 dates and amounts per transaction not including other computation or storage.
+## Batch Transfers
 
+Batch transfer functions can significantly lower the cost of making many transfers.
+
+There is a `batchTransfer` function suitable for use with any ERC20 token in the `BatchTransfer.sol`
+```solidity
+function batchTransfer(IERC20 token, address[] memory recipients, uint[] memory amounts) external returns (bool) 
+```
+
+And a `batchFundReleaseSchedule()` is part of the `TokenLockup.sol` contract:
+```solidity
+function batchFundReleaseSchedule(
+    address[] memory recipients,
+    uint[] memory amounts,
+    uint[] memory commencementTimestamps, // unix timestamp
+    uint[] memory scheduleIds
+) external returns (bool)
+```
+
+## Deployment
+
+Deployment scripts are provided in the `scripts` folder. These scripts can be run with
+```shell
+npx hardhat clean && npx hardhat run scripts/1_deploy-token.js
+```
+
+The scripts also publish contract definitions to Etherscan where users can interact with the verified smart contract definitions using MetaMask wallets.

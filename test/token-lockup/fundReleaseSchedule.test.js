@@ -24,7 +24,7 @@ async function exactlyMoreThanOneDayAgo () {
 }
 
 describe('TokenLockup unlock scheduling', async function () {
-  let tokenLockup, token, reserveAccount, recipient, accounts
+  let tokenLockup, token, reserveAccount, recipient, accounts, TokenLockup
   const decimals = 10
   const totalSupply = 8e9
 
@@ -46,7 +46,7 @@ describe('TokenLockup unlock scheduling', async function () {
     )
     const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
     const scheduleCalc = await ScheduleCalc.deploy()
-    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
+    TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
       libraries: {
         ScheduleCalc: scheduleCalc.address
       }
@@ -57,6 +57,44 @@ describe('TokenLockup unlock scheduling', async function () {
       'XYZ Lockup',
       100 // low minimum to force rounding issues
     )
+  })
+
+  it('fundReleaseRelease schedule emits a ScheduleFunded event', async () => {
+    const totalRecipientAmount = 1000
+    const totalBatches = 3
+    const firstDelay = 0
+    const firstBatchBips = 800 // 8%
+    const batchDelay = 3600 * 24 * 4 // 4 days
+    const commence = await exactlyMoreThanOneDayAgo()
+
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
+      .to.equal(0)
+    expect(await tokenLockup.scheduleCount())
+      .to.equal(0)
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
+
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    await expect(tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      490,
+      commence,
+      0 // scheduleId
+    )).to.emit(tokenLockup, 'ScheduleFunded')
+      .withArgs(reserveAccount.address, recipient.address, 0, 490, commence, 0)
+
+    await expect(tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      510,
+      commence,
+      0 // scheduleId
+    )).to.emit(tokenLockup, 'ScheduleFunded')
+      .withArgs(reserveAccount.address, recipient.address, 0, 510, commence, 1)
   })
 
   it('timelock creation with immediately unlocked tokens', async () => {
@@ -150,5 +188,85 @@ describe('TokenLockup unlock scheduling', async function () {
     }
 
     expect(errorMessage).to.match(/< 1 token per release/)
+  })
+
+  it('must have more tokens than minReleaseScheduleAmount', async () => {
+    const minReleaseScheduleAmount = 100
+    const tokenLockup = await TokenLockup.deploy(
+      token.address,
+      'Xavier Yolo Zeus Token Lockup Release Scheduler',
+      'XYZ Lockup',
+      minReleaseScheduleAmount // low minimum to force rounding issues
+    )
+
+    const totalRecipientAmount = minReleaseScheduleAmount - 1 // this is below the required amount
+    const totalBatches = 1
+    const firstDelay = 0
+    const firstBatchBips = 100 * 100
+    const batchDelay = 1
+    const commence = 0
+
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
+
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    let errorMessage
+    try {
+      await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+        recipient.address,
+        totalRecipientAmount,
+        commence,
+        0 // scheduleId
+      )
+    } catch (e) {
+      errorMessage = e.message
+    }
+
+    expect(errorMessage).to.match(/amount < min funding/)
+  })
+
+  it('cannot specify non existent schedule id', async () => {
+    const minReleaseScheduleAmount = 100
+    const tokenLockup = await TokenLockup.deploy(
+      token.address,
+      'Xavier Yolo Zeus Token Lockup Release Scheduler',
+      'XYZ Lockup',
+      minReleaseScheduleAmount // low minimum to force rounding issues
+    )
+
+    const totalRecipientAmount = minReleaseScheduleAmount
+    const totalBatches = 1
+    const firstDelay = 0
+    const firstBatchBips = 100 * 100
+    const batchDelay = 1
+    const commence = 0
+
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
+
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    let errorMessage
+    try {
+      await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+        recipient.address,
+        totalRecipientAmount,
+        commence,
+        1 // scheduleId
+      )
+    } catch (e) {
+      errorMessage = e.message
+    }
+
+    expect(errorMessage).to.match(/bad scheduleId/)
   })
 })
