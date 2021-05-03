@@ -294,7 +294,7 @@ describe('TokenLockup burn timelock', async function () {
       message = e.message
     }
 
-    expect(message).to.match(/A burn wasn't confirmed/)
+    expect(message).to.match(/Burn not confirmed/)
 
     // balances do not change
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))

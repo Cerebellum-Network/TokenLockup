@@ -209,17 +209,19 @@ contract TokenLockup {
         require(timelockIndex < timelocks[msg.sender].length, "No schedule");
 
         // this also protects from overflow below
-        require(confirmationIdPlusOne == timelockIndex + 1, "A burn wasn't confirmed");
+        require(confirmationIdPlusOne == timelockIndex + 1, "Burn not confirmed");
 
         // actually burning the remaining tokens from the unlock
         token.burn(lockedBalanceOfTimelock(msg.sender, timelockIndex) + unlockedBalanceOfTimelock(msg.sender, timelockIndex));
 
-        uint lastIndex = timelocks[msg.sender].length - 1;
-        if (lastIndex != timelockIndex) {
+        // overwrite the timelock to delete with the timelock on the end which will be discarded
+        // if the timelock to delete is on the end, it will just be deleted in the step after the if statement
+        if (timelocks[msg.sender].length - 1 != timelockIndex) {
             timelocks[msg.sender][timelockIndex] = timelocks[msg.sender][timelocks[msg.sender].length - 1];
         }
-
+        // delete the timelock on the end
         timelocks[msg.sender].pop();
+
         emit ScheduleBurned(msg.sender, timelockIndex);
     }
 
