@@ -12,10 +12,22 @@ async function exactlyMoreThanOneDayAgo () {
   return await currentTimestamp(-3601)
 }
 
+const advanceTime = async (days) => {
+  await hre.network.provider.request({
+    method: 'evm_increaseTime',
+    params: [days * 3600 * 24]
+  })
+  await hre.network.provider.request({
+    method: 'evm_mine',
+    params: []
+  })
+}
+
+const totalSupply = 8e9
+
 describe('TokenLockup burn timelock', async function () {
   let tokenLockup, token, reserveAccount, recipient, accounts
   const decimals = 10
-  const totalSupply = 8e9
 
   beforeEach(async () => {
     accounts = await hre.ethers.getSigners()
@@ -161,6 +173,7 @@ describe('TokenLockup burn timelock', async function () {
       0
     )
 
+    // check starting values
     expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(3)
     expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(600)
 
@@ -191,7 +204,6 @@ describe('TokenLockup burn timelock', async function () {
       .withArgs(recipient.address, 0)
     expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(0)
     expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(0)
-
 
     expect(await tokenLockup.timelockCountOf(recipient2Address)).to.equal(1)
     expect(await tokenLockup.balanceOf(recipient2Address)).to.equal(123)
@@ -309,5 +321,146 @@ describe('TokenLockup burn timelock', async function () {
 
     expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('100')
+  })
+
+  it('can burn multiple timelocks with some amounts unlocked', async () => {
+    const totalRecipientAmount = 1000
+    const totalBatches = 3
+    const firstDelay = 0
+    const firstBatchBips = 5000 // 50%
+    const batchDelay = 3600 * 24 * 4 // 4 days
+    const commence = await exactlyMoreThanOneDayAgo()
+    const recipient1Address = accounts[1].address
+    const recipient2Address = accounts[2].address
+
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
+      .to.equal(0)
+    expect(await tokenLockup.scheduleCount())
+      .to.equal(0)
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
+
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    // fund 3 schedules for recipient 1
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient1Address,
+      100,
+      commence,
+      0
+    )
+
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient1Address,
+      200,
+      commence,
+      0
+    )
+
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient1Address,
+      300,
+      commence,
+      0
+    )
+
+    // fund 1 schedules for recipient 2
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient2Address,
+      123,
+      commence,
+      0
+    )
+
+    expect(await tokenLockup.totalSupply()).to.equal(723)
+    // 50% unlocked (truncate remainder)
+    expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(3)
+    expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(600)
+    expect(await tokenLockup.unlockedBalanceOf(recipient1Address)).to.equal(300)
+    expect(await tokenLockup.lockedBalanceOf(recipient1Address)).to.equal(300)
+
+    // separate accounts timelock that shouldn't be touched
+    expect(await tokenLockup.timelockCountOf(recipient2Address)).to.equal(1)
+    expect(await tokenLockup.balanceOf(recipient2Address)).to.equal(123)
+    expect(await tokenLockup.unlockedBalanceOf(recipient2Address)).to.equal(61)
+    expect(await tokenLockup.lockedBalanceOf(recipient2Address)).to.equal(62)
+
+    // burn the middle timelock with 200 tokens in it
+
+    await expect(tokenLockup.connect(accounts[1]).burn(1, 2))
+      .to.emit(tokenLockup, 'ScheduleBurned')
+      .withArgs(recipient.address, 1)
+
+    expect(await tokenLockup.totalSupply()).to.equal(523)
+    expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(2)
+    expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(400)
+    expect(await tokenLockup.unlockedBalanceOf(recipient1Address)).to.equal(200)
+    expect(await tokenLockup.lockedBalanceOf(recipient1Address)).to.equal(200)
+
+    // there are 50% was unlocked 25% for each of 2 remaining periods
+    // advance 1 period so that 75% of the unlocked tokens remain
+    await advanceTime(4)
+    expect(await tokenLockup.totalSupply()).to.equal(523)
+    expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(2)
+    expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(400)
+    expect(await tokenLockup.unlockedBalanceOf(recipient1Address)).to.equal(300)
+    expect(await tokenLockup.lockedBalanceOf(recipient1Address)).to.equal(100)
+
+    // transfer to make sure it doesn't borrow values from other transfer locks
+    await tokenLockup.connect(accounts[1]).transfer(accounts[4].address, 10)
+    expect(await tokenLockup.totalSupply()).to.equal(513)
+    expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(2)
+    expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(390)
+    expect(await tokenLockup.unlockedBalanceOf(recipient1Address)).to.equal(290)
+    expect(await tokenLockup.lockedBalanceOf(recipient1Address)).to.equal(100)
+
+    // burn the last lockup with 300 tokens leaving the 100 - 10 value lockup
+    await expect(tokenLockup.connect(accounts[1]).burn(1, 2))
+      .to.emit(tokenLockup, 'ScheduleBurned')
+      .withArgs(recipient.address, 1)
+    expect(await tokenLockup.totalSupply()).to.equal(213)
+    expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(1)
+    expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(90)
+    expect(await tokenLockup.unlockedBalanceOf(recipient1Address)).to.equal(65) // unlocked - transferred
+    expect(await tokenLockup.lockedBalanceOf(recipient1Address)).to.equal(25)
+
+    // advance time so all are unlocked
+    await advanceTime(4)
+    expect(await tokenLockup.totalSupply()).to.equal(213)
+    expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(1)
+    expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(90)
+    expect(await tokenLockup.unlockedBalanceOf(recipient1Address)).to.equal(90) // unlocked - transferred
+    expect(await tokenLockup.lockedBalanceOf(recipient1Address)).to.equal(0)
+
+    // transfer and check again
+    await tokenLockup.connect(accounts[1]).transfer(accounts[4].address, 10)
+    expect(await tokenLockup.totalSupply()).to.equal(203)
+    expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(1)
+    expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(80)
+    expect(await tokenLockup.unlockedBalanceOf(recipient1Address)).to.equal(80) // unlocked - transferred
+    expect(await tokenLockup.lockedBalanceOf(recipient1Address)).to.equal(0)
+
+    // burn the last timelock
+    await expect(tokenLockup.connect(accounts[1]).burn(0, 1))
+      .to.emit(tokenLockup, 'ScheduleBurned')
+      .withArgs(recipient.address, 0)
+    expect(await tokenLockup.timelockCountOf(recipient1Address)).to.equal(0)
+    expect(await tokenLockup.balanceOf(recipient1Address)).to.equal(0)
+    expect(await tokenLockup.unlockedBalanceOf(recipient1Address)).to.equal(0) // unlocked - transferred
+    expect(await tokenLockup.lockedBalanceOf(recipient1Address)).to.equal(0)
+
+    // leaves other timelocks and balances intact
+    expect(await tokenLockup.totalSupply()).to.equal(123)
+    expect(await tokenLockup.timelockCountOf(recipient2Address)).to.equal(1)
+    expect(await tokenLockup.balanceOf(recipient2Address)).to.equal(123)
+    expect(await tokenLockup.unlockedBalanceOf(recipient2Address)).to.equal(123) // all unlocked
+    expect(await tokenLockup.lockedBalanceOf(recipient2Address)).to.equal(0)
+
+    // token total supply should also have the correct number of tokens burned
+    expect(await token.totalSupply()).to.equal(totalSupply - (600 - 10 - 10))
   })
 })

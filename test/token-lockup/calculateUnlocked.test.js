@@ -12,10 +12,6 @@ function months (numMonths) {
   return days(30 * numMonths)
 }
 
-// function years (numYears) {
-//   return days(365 * numYears)
-// }
-
 describe('TokenLockup calculate unlocked', async function () {
   let tokenLockup, token, reserveAccount, accounts
   const decimals = 10
