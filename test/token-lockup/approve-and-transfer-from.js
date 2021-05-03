@@ -11,11 +11,11 @@ async function currentTimestamp (offsetInSeconds = 0) {
 async function exactlyMoreThanOneDayAgo () {
   return await currentTimestamp(-3601)
 }
-
+const maxUint = '115792089237316195423570985008687907853269984665640564039457584007913129639935'
 describe('TokenLockup unlock scheduling', async function () {
   let tokenLockup, token, reserveAccount, recipient, accounts, allowedAccount, allowedAccountRecipient
   const decimals = 10
-  const totalSupply = 8e9
+  const totalSupply = maxUint
 
   beforeEach(async () => {
     accounts = await hre.ethers.getSigners()
@@ -97,6 +97,37 @@ describe('TokenLockup unlock scheduling', async function () {
     expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(11)
 
     await tokenLockup.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 11)
+  })
+
+  it('increaseAllowance cannot overflow approval max integer value', async () => {
+    await tokenLockup.connect(recipient).approve(allowedAccount.address,
+      maxUint)
+
+    expect(await tokenLockup.connect(recipient)
+      .allowance(recipient.address, allowedAccount.address))
+      .to.equal(maxUint)
+
+    let errorMessage
+    try {
+      await tokenLockup.connect(recipient).increaseAllowance(allowedAccount.address, 1)
+    } catch (e) {
+      errorMessage = e.message
+    }
+    expect(errorMessage).to.match(/Transaction reverted/)
+    expect(await tokenLockup.connect(recipient)
+      .allowance(recipient.address, allowedAccount.address))
+      .to.equal(maxUint)
+  })
+
+  it('cannot pass in a value greater than max uint256 value to approve()', async () => {
+    let errorMessage
+    try {
+      await tokenLockup.connect(recipient).approve(allowedAccount.address,
+        '115792089237316195423570985008687907853269984665640564039457584007913129639936')
+    } catch (e) {
+      errorMessage = e.message
+    }
+    expect(errorMessage).to.match(/value out-of-bounds/)
   })
 
   it('cannot decreaseAllowance to below 0', async () => {
