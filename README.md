@@ -1,10 +1,10 @@
-# Token Release Scheduler
+# Token Lockup and ERC20 Smart Contracts
 
 Status: feature complete, audit not complete
 
 ## Overview
 
-This is an Ethereum ERC-20 standard compatible token and scheduled release "vesting" smart contract that:
+This is an Ethereum ERC-20 standard compatible token and TokenLockup scheduled release "vesting" smart contract that:
 
 * Does not have centralized controllers or admin roles to demonstrate strong decentralization and increased trust
 * Can enforce a scheduled release of tokens (e.g. investment lockups)
