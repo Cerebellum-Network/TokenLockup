@@ -17,7 +17,7 @@ struct Timelock {
 }
 
 library ScheduleCalc {
-    function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, ReleaseSchedule memory releaseSchedule) public pure returns (uint unlocked) {
+    function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, ReleaseSchedule memory releaseSchedule) external pure returns (uint unlocked) {
         uint secondsElapsed = currentTimestamp - commencedTimestamp;
 
         // return the full amount if the total lockup period has expired

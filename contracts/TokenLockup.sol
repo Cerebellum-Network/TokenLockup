@@ -210,7 +210,7 @@ contract TokenLockup {
         return token.balanceOf(address(this));
     }
 
-    function burn(uint timelockIndex, uint confirmationIdPlusOne) public returns(bool) {
+    function burn(uint timelockIndex, uint confirmationIdPlusOne) external returns(bool) {
         require(timelockIndex < timelocks[msg.sender].length, "No schedule");
 
         // this also protects from overflow below
@@ -261,7 +261,7 @@ contract TokenLockup {
         return true;
     }
 
-    function transferTimelock(address to, uint value, uint timelockId) public returns (bool) {
+    function transferTimelock(address to, uint value, uint timelockId) external returns (bool) {
         require(unlockedBalanceOfTimelock(msg.sender, timelockId) >= value, "amount > unlocked");
         timelocks[msg.sender][timelockId].tokensTransferred += value;
         require(token.transfer(to, value));
@@ -285,11 +285,11 @@ contract TokenLockup {
         return releaseSchedules.length;
     }
 
-    function timelockOf(address who, uint index) public view returns (Timelock memory timelock) {
+    function timelockOf(address who, uint index) external view returns (Timelock memory timelock) {
         return timelocks[who][index];
     }
 
-    function timelockCountOf(address who) public view returns (uint) {
+    function timelockCountOf(address who) external view returns (uint) {
         return timelocks[who].length;
     }
 }
