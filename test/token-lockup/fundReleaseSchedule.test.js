@@ -269,4 +269,23 @@ describe('TokenLockup unlock scheduling', async function () {
 
     expect(errorMessage).to.match(/bad scheduleId/)
   })
+
+  it('returns true after fundReleaseSchdule is called', async () => {
+    const commence = await exactlyMoreThanOneDayAgo()
+
+    await token.connect(reserveAccount).approve(tokenLockup.address, 200)
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      1,
+      0,
+      100 * 100,
+      0
+    )
+
+    expect(await tokenLockup.connect(reserveAccount).callStatic.fundReleaseSchedule(
+      recipient.address,
+      100,
+      commence,
+      0 // scheduleId
+    )).to.equal(true)
+  })
 })

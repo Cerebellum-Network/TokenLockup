@@ -463,4 +463,26 @@ describe('TokenLockup burn timelock', async function () {
     // token total supply should also have the correct number of tokens burned
     expect(await token.totalSupply()).to.equal(totalSupply - (600 - 10 - 10))
   })
+
+  it('returns true after burn is called successfully', async () => {
+    const commence = await exactlyMoreThanOneDayAgo()
+
+    await token.connect(reserveAccount).approve(tokenLockup.address, 200)
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      1,
+      0,
+      100 * 100,
+      0
+    )
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      100,
+      commence,
+      0 // scheduleId
+    )
+
+    expect(await tokenLockup.connect(recipient).callStatic.burn(
+      0, 1
+    )).to.equal(true)
+  })
 })

@@ -12,7 +12,7 @@ contract BatchTransfer {
         require(recipients.length == amounts.length, "recipient & amount arrays must be the same length");
 
         for (uint i; i < recipients.length; i++) {
-            token.transferFrom(msg.sender, recipients[i], amounts[i]);
+            require(token.transferFrom(msg.sender, recipients[i], amounts[i]));
         }
 
         return true;
