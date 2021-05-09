@@ -17,6 +17,7 @@ struct Timelock {
 }
 
 library ScheduleCalc {
+    uint constant BIPS_PRECISION = 10000;
     function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, ReleaseSchedule memory releaseSchedule) external pure returns (uint unlocked) {
         uint secondsElapsed = currentTimestamp - commencedTimestamp;
 

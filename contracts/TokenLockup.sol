@@ -59,12 +59,12 @@ contract TokenLockup {
         uint unlockScheduleId
     ) {
         require(releaseCount >= 1, "< 1 release");
-        require(initialReleasePortionInBips <= 1e4, "release > 100%");
+        require(initialReleasePortionInBips <= ScheduleCalc.BIPS_PRECISION, "release > 100%");
         if (releaseCount > 1) {
             require(periodBetweenReleasesInSeconds > 0, "period = 0");
         }
         if (releaseCount == 1) {
-            require(initialReleasePortionInBips == 1e4, "released < 100%");
+            require(initialReleasePortionInBips == ScheduleCalc.BIPS_PRECISION, "released < 100%");
         }
 
         releaseSchedules.push(ReleaseSchedule(
