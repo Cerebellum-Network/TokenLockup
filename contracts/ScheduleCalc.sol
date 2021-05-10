@@ -20,6 +20,9 @@ library ScheduleCalc {
     uint constant BIPS_PRECISION = 10000;
 
     function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, ReleaseSchedule memory releaseSchedule) external pure returns (uint unlocked) {
+        if(commencedTimestamp > currentTimestamp) {
+            return 0;
+        }
         uint secondsElapsed = currentTimestamp - commencedTimestamp;
 
         // return the full amount if the total lockup period has expired
