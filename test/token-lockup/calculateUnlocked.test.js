@@ -156,11 +156,11 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(unlocked).to.equal(38)
     })
 
-    it('60 + 8 unlocked after 180 days', async () => {
+    it('60 + 9 unlocked after 180 days', async () => {
       const currentTime = commenced + months(6)
 
       const unlocked = await tokenLockup.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlocked).to.equal(68)
+      expect(unlocked).to.equal(69)
     })
 
     it('90 + 8 + remainder = 100 unlocked after 180 days', async () => {
@@ -193,28 +193,28 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(unlocked).to.equal(77)
     })
 
-    it('307 = 77 + 230(truncated period portion) unlocked after one 90 day period', async () => {
+    it('307 = 77 + 230 // truncate((923x1)/4) unlocked after one 90 day period', async () => {
       const currentTime = commenced + months(3)
 
       const unlocked = await tokenLockup.calculateUnlocked(commenced, currentTime, amount, scheduledId)
       expect(unlocked).to.equal(307)
     })
 
-    it('537 = 77 + 230 * 2 periods unlocked after 180 days', async () => {
+    it('538 = 77 +  461 // truncate((923x2)/4) periods unlocked after 180 days', async () => {
       const currentTime = commenced + months(6)
 
       const unlocked = await tokenLockup.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlocked).to.equal(537)
+      expect(unlocked).to.equal(538)
     })
 
-    it('767 = 77 + 230 * 3 periods unlocked after 270 days', async () => {
+    it('769 = 77 + 692 // truncate((923x3)/4) unlocked after 270 days', async () => {
       const currentTime = commenced + months(9)
 
       const unlocked = await tokenLockup.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlocked).to.equal(767)
+      expect(unlocked).to.equal(769)
     })
 
-    it('1000 = 77 + 230 * 4 + 3(remainder) unlocked after 360 days', async () => {
+    it('1000 = 77 + 923 * truncate((923x4)/4) unlocked after 360 days', async () => {
       const currentTime = commenced + months(12)
 
       const unlocked = await tokenLockup.calculateUnlocked(commenced, currentTime, amount, scheduledId)
@@ -251,32 +251,32 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(unlocked).to.equal(226)
     })
 
-    it('380 = 72 + 154 * 2 periods unlocked after 180 days', async () => {
+    it('380 = 72 + 309 periods unlocked after 180 days', async () => {
       const currentTime = commenced + days(180)
 
       const unlocked = await tokenLockup.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlocked).to.equal(380)
+      expect(unlocked).to.equal(381)
     })
 
-    it('534 = 72 + 154 * 3 periods unlocked after 270 days', async () => {
+    it('534 = 72 + 464 periods unlocked after 270 days', async () => {
       const currentTime = commenced + days(270)
 
       const unlocked = await tokenLockup.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlocked).to.equal(534)
+      expect(unlocked).to.equal(536)
     })
 
-    it('688 = 72 + 154 * 4 periods unlocked after 360 days', async () => {
+    it('688 = 72 + 618 periods unlocked after 360 days', async () => {
       const currentTime = commenced + days(360)
 
       const unlocked = await tokenLockup.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlocked).to.equal(688)
+      expect(unlocked).to.equal(690)
     })
 
-    it('842 = 72 + 154 * 5 periods unlocked after 450 days', async () => {
+    it('842 = 72 + 773 periods unlocked after 450 days', async () => {
       const currentTime = commenced + days(450)
 
       const unlocked = await tokenLockup.calculateUnlocked(commenced, currentTime, amount, scheduledId)
-      expect(unlocked).to.equal(842)
+      expect(unlocked).to.equal(845)
     })
 
     it('1000 = 72 + 154 * 6 periods + 4 (remainder) unlocked after 540 days', async () => {
@@ -318,13 +318,24 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.calculateUnlocked(commenced, numberOfSecondsInYear + 1, amount, scheduledId)).to.equal(numberOfSecondsInYear)
     })
 
-    it('remainder of tokens delivered in the last period', async () => {
-      const remainder = numberOfSecondsInYear - 10 // if get smaller than this javascript rounds for us and the test fails incorrectly
-      const amount = numberOfSecondsInYear + remainder
-      // expect(await tokenLockup.calculateUnlocked(commenced, 1, amount, scheduledId)).to.equal(1)
-      expect(await tokenLockup.calculateUnlocked(commenced, 1e6, amount, scheduledId)).to.equal(1e6)
+    it('remainder of tokens delivered as evenly as possible if amount = 2 x numberOfPeriods - 10', async () => {
+      // the formula should do truncate((amount + elapsedPeriods) / periods)
+      // instead of truncate(amount / periods) * elapsed periods
+      // this by delaying truncation this distributes tokens more evenly accross the time periods
+      // the more time periods, the more these accumulations add up
+      // this is most dramatic for distributions calculated every seconds for millions of seconds
+      const amount = (numberOfSecondsInYear * 2) - 10
+      expect(await tokenLockup.calculateUnlocked(commenced, 1, amount, scheduledId)).to.equal(1)
+
+      // third period is where even distributions starts accumulating differently than if we divided all periods first then multiplied
+      expect(await tokenLockup.calculateUnlocked(commenced, 3, amount, scheduledId)).to.equal(5)
+      expect(await tokenLockup.calculateUnlocked(commenced, 10, amount, scheduledId)).to.equal(19)
+      expect(await tokenLockup.calculateUnlocked(commenced, 100, amount, scheduledId)).to.equal(199)
+
+      // at 1M seconds the difference in what is distributed using this method is double - 1. Very significant.
+      expect(await tokenLockup.calculateUnlocked(commenced, 1e6, amount, scheduledId)).to.equal(1999999)
       expect(await tokenLockup.calculateUnlocked(commenced, numberOfSecondsInYear, amount, scheduledId)).to.equal(amount)
-      expect(await tokenLockup.calculateUnlocked(commenced, numberOfSecondsInYear, amount, scheduledId)).to.equal(numberOfSecondsInYear + remainder)
+      expect(await tokenLockup.calculateUnlocked(commenced, numberOfSecondsInYear, amount, scheduledId)).to.equal(amount)
       expect(await tokenLockup.calculateUnlocked(commenced, numberOfSecondsInYear + 1, amount, scheduledId)).to.equal(amount)
     })
   })
