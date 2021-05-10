@@ -17,7 +17,9 @@ struct Timelock {
 }
 
 library ScheduleCalc {
-    function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, ReleaseSchedule memory releaseSchedule) public pure returns (uint unlocked) {
+    uint constant BIPS_PRECISION = 10000;
+
+    function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, ReleaseSchedule memory releaseSchedule) external pure returns (uint unlocked) {
         uint secondsElapsed = currentTimestamp - commencedTimestamp;
 
         // return the full amount if the total lockup period has expired
@@ -31,7 +33,7 @@ library ScheduleCalc {
 
         // unlock the initial release if the delay has elapsed
         if (secondsElapsed >= releaseSchedule.delayUntilFirstReleaseInSeconds) {
-            unlocked += (amount * releaseSchedule.initialReleasePortionInBips) / 1e4;
+            unlocked = (amount * releaseSchedule.initialReleasePortionInBips) / BIPS_PRECISION;
 
             // if at least one period after the delay has passed
             if (secondsElapsed - releaseSchedule.delayUntilFirstReleaseInSeconds
@@ -39,12 +41,15 @@ library ScheduleCalc {
 
                 // calculate the number of additional periods that have passed (not including the initial release)
                 // this discards any remainders (ie it truncates / rounds down)
-                uint additionalPeriods =
+                uint additionalUnlockedPeriods =
                 (secondsElapsed - releaseSchedule.delayUntilFirstReleaseInSeconds) /
                 releaseSchedule.periodBetweenReleasesInSeconds;
 
-                // unlocked includes the number of additionalPeriods elapsed, times the evenly distributed remaining amount
-                unlocked += additionalPeriods * ((amount - unlocked) / (releaseSchedule.releaseCount - 1));
+                // calculate the amount of unlocked tokens for the additionalUnlockedPeriods
+                // multiplication is applied before division to delay truncating to the smallest unit
+                // this distributes unlocked tokens more evenly across unlock periods
+                // than truncated division followed by multiplication
+                unlocked += ((amount - unlocked) * additionalUnlockedPeriods) / (releaseSchedule.releaseCount - 1);
             }
         }
 

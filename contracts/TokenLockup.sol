@@ -59,12 +59,12 @@ contract TokenLockup {
         uint unlockScheduleId
     ) {
         require(releaseCount >= 1, "< 1 release");
-        require(initialReleasePortionInBips <= 1e4, "release > 100%");
+        require(initialReleasePortionInBips <= ScheduleCalc.BIPS_PRECISION, "release > 100%");
         if (releaseCount > 1) {
             require(periodBetweenReleasesInSeconds > 0, "period = 0");
         }
         if (releaseCount == 1) {
-            require(initialReleasePortionInBips == 1e4, "released < 100%");
+            require(initialReleasePortionInBips == ScheduleCalc.BIPS_PRECISION, "released < 100%");
         }
 
         releaseSchedules.push(ReleaseSchedule(
@@ -84,14 +84,14 @@ contract TokenLockup {
         uint amount,
         uint commencementTimestamp, // unix timestamp
         uint scheduleId
-    ) public {
+    ) public returns(bool) {
         require(amount >= minReleaseScheduleAmount, "amount < min funding");
         require(to != address(0), "to 0 address");
         require(scheduleId < releaseSchedules.length, "bad scheduleId");
         require(amount >= releaseSchedules[scheduleId].releaseCount, "< 1 token per release");
 
         // It will revert via ERC20 implementation if there's no allowance
-        token.transferFrom(msg.sender, address(this), amount);
+        require(token.transferFrom(msg.sender, address(this), amount));
 
         Timelock memory timelock;
         timelock.scheduleId = scheduleId;
@@ -101,6 +101,7 @@ contract TokenLockup {
         timelocks[to].push(timelock);
 
         emit ScheduleFunded(msg.sender, to, scheduleId, amount, commencementTimestamp, timelocks[to].length - 1);
+        return true;
     }
 
     function batchFundReleaseSchedule(
@@ -111,7 +112,7 @@ contract TokenLockup {
     ) external returns (bool) {
         require(amounts.length == recipients.length, "mismatched array length");
         for (uint i; i < recipients.length; i++) {
-            fundReleaseSchedule(recipients[i], amounts[i], commencementTimestamps[i], scheduleIds[i]);
+            require(fundReleaseSchedule(recipients[i], amounts[i], commencementTimestamps[i], scheduleIds[i]));
         }
 
         return true;
@@ -209,7 +210,7 @@ contract TokenLockup {
         return token.balanceOf(address(this));
     }
 
-    function burn(uint timelockIndex, uint confirmationIdPlusOne) public {
+    function burn(uint timelockIndex, uint confirmationIdPlusOne) external returns(bool) {
         require(timelockIndex < timelocks[msg.sender].length, "No schedule");
 
         // this also protects from overflow below
@@ -227,6 +228,7 @@ contract TokenLockup {
         timelocks[msg.sender].pop();
 
         emit TimelockBurned(msg.sender, timelockIndex);
+        return true;
     }
 
     function _transfer(address from, address to, uint value) internal returns (bool) {
@@ -252,16 +254,17 @@ contract TokenLockup {
             }
         }
 
+        // should never have a remainingTransfer amount at this point
         require(remainingTransfer == 0, "bad transfer");
-        // this should never happen
-        token.transfer(to, value);
+
+        require(token.transfer(to, value));
         return true;
     }
 
-    function transferTimelock(address to, uint value, uint timelockId) public returns (bool) {
+    function transferTimelock(address to, uint value, uint timelockId) external returns (bool) {
         require(unlockedBalanceOfTimelock(msg.sender, timelockId) >= value, "amount > unlocked");
         timelocks[msg.sender][timelockId].tokensTransferred += value;
-        token.transfer(to, value);
+        require(token.transfer(to, value));
         return true;
     }
 
@@ -282,11 +285,11 @@ contract TokenLockup {
         return releaseSchedules.length;
     }
 
-    function timelockOf(address who, uint index) public view returns (Timelock memory timelock) {
+    function timelockOf(address who, uint index) external view returns (Timelock memory timelock) {
         return timelocks[who][index];
     }
 
-    function timelockCountOf(address who) public view returns (uint) {
+    function timelockCountOf(address who) external view returns (uint) {
         return timelocks[who].length;
     }
 }
