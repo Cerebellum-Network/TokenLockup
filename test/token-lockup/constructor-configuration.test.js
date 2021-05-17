@@ -37,7 +37,8 @@ describe('TokenLockup deployment test', async () => {
       token.address,
       schedulerName,
       schedulerSymbol,
-      1e4
+      1e4,
+      346896000 // 11 years
     )
 
     expect(await tokenLockup.name()).to.equal(schedulerName)
@@ -54,7 +55,8 @@ describe('TokenLockup deployment test', async () => {
         token.address,
         schedulerName,
         'XYZ Lockup',
-        0
+        0,
+        346896000
       )
     } catch (e) {
       errorMessage = e.message

@@ -58,7 +58,8 @@ describe('TokenLockup timelock balances', async function () {
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
-      100 // low minimum to force rounding issues
+      100,
+      346896000
     )
   })
 
@@ -190,7 +191,7 @@ describe('TokenLockup timelock balances', async function () {
     const firstDelay = 0
     const firstBatchBips = 800 // 8%
     const batchDelay = 3600 * 24 * 365 * 200 // 200 years
-    const commence = 0 // start of the unix epoch
+    const commence = currentTimestamp(-(60 * 60 * 24 * 365 * 10))
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal(0)
@@ -310,5 +311,71 @@ describe('TokenLockup timelock balances', async function () {
     // transfer 50 from the second timelock and 1 from the second timelock
     await tokenLockup.connect(recipient).transfer(recipientAccount, 49)
     expect(await tokenLockup.totalSupply()).to.equal('0')
+  })
+
+  it('it can set a schedule to a balance in the future within the maxCommencementTimeInSeconds', async () => {
+    const totalRecipientAmount = 100
+    const totalBatches = 3
+    const firstDelay = 0
+    const firstBatchBips = 800 // 8%
+    const batchDelay = 3600 * 24 * 365 * 200 // 200 years
+    const commence = currentTimestamp((60 * 60 * 24 * 365 * 10))
+
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
+      .to.equal(0)
+    expect(await tokenLockup.scheduleCount())
+      .to.equal(0)
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount * 2)
+
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      totalRecipientAmount,
+      commence,
+      0 // scheduleId
+    )
+
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
+      .to.equal('0')
+
+    expect(await tokenLockup.lockedBalanceOf(recipient.address))
+      .to.equal('100')
+
+    expect(await tokenLockup.balanceOf(recipient.address))
+      .to.equal('100')
+
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      totalRecipientAmount,
+      commence,
+      0 // scheduleId
+    )
+
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
+      .to.equal('0')
+
+    expect(await tokenLockup.lockedBalanceOf(recipient.address))
+      .to.equal('200')
+
+    expect(await tokenLockup.balanceOf(recipient.address))
+      .to.equal('200')
+
+    expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 0))
+      .to.equal('100')
+
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0))
+      .to.equal('0')
+
+    expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 1))
+      .to.equal('100')
+
+    expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1))
+      .to.equal('0')
   })
 })

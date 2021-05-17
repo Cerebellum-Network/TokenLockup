@@ -44,7 +44,8 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
-      30 // low minimum to force rounding issues
+      30,
+      346896000
     )
 
     const totalBatches = 3
