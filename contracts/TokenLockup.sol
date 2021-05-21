@@ -19,7 +19,7 @@ contract TokenLockup {
 
     ReleaseSchedule[] public releaseSchedules;
     uint public minReleaseScheduleAmount;
-    uint public maxCommencementRangeInSeconds;
+    uint public maxReleaseDelay;
 
     mapping(address => Timelock[]) public timelocks;
     mapping(address => uint) internal _totalTokensUnlocked;
@@ -39,7 +39,7 @@ contract TokenLockup {
         string memory name_,
         string memory symbol_,
         uint _minReleaseScheduleAmount,
-        uint _maxCommencementRangeInSeconds
+        uint _maxReleaseDelay
     ) {
         _name = name_;
         _symbol = symbol_;
@@ -47,7 +47,7 @@ contract TokenLockup {
 
         require(_minReleaseScheduleAmount > 0, "Min schedule amount > 0");
         minReleaseScheduleAmount = _minReleaseScheduleAmount;
-        maxCommencementRangeInSeconds = _maxCommencementRangeInSeconds;
+        maxReleaseDelay = _maxReleaseDelay;
     }
 
     function createReleaseSchedule(
@@ -95,13 +95,12 @@ contract TokenLockup {
         // It will revert via ERC20 implementation if there's no allowance
         require(token.transferFrom(msg.sender, address(this), amount));
         require(
-            commencementTimestamp >= block.timestamp - maxCommencementRangeInSeconds &&
-            commencementTimestamp <= block.timestamp + maxCommencementRangeInSeconds
+            commencementTimestamp <= block.timestamp + maxReleaseDelay
         , "commencement time out of range");
 
         require(
             commencementTimestamp + releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds  <=
-            block.timestamp + maxCommencementRangeInSeconds
+            block.timestamp + maxReleaseDelay
         , "initial release out of range");
 
         Timelock memory timelock;

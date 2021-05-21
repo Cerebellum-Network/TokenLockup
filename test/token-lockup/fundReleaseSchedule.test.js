@@ -294,7 +294,7 @@ describe('TokenLockup unlock scheduling', async function () {
     )).to.equal(true)
   })
 
-  it('cannot specify a commencement time outside of the allowed range', async () => {
+  it('cannot specify a commencement time after the allowed range', async () => {
     const minReleaseScheduleAmount = 100
     const tokenLockup = await TokenLockup.deploy(
       token.address,
@@ -319,20 +319,6 @@ describe('TokenLockup unlock scheduling', async function () {
       batchDelay
     )
 
-    let errorMessage
-    try {
-      await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
-        recipient.address,
-        totalRecipientAmount,
-        exactlyMoreThanOneDayAgo(),
-        0 // scheduleId
-      )
-    } catch (e) {
-      errorMessage = e.message
-    }
-
-    expect(errorMessage).to.match(/commencement time out of range/)
-
     let errorMessage2
     try {
       await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
@@ -356,7 +342,7 @@ describe('TokenLockup unlock scheduling', async function () {
     expect(await tokenLockup.timelockCountOf(recipient.address)).to.equal(1)
   })
 
-  it('cannot specify a batch delay time outside of the allowed range', async () => {
+  it('cannot specify a batch delay time after the allowed range', async () => {
     const minReleaseScheduleAmount = 100
     const tokenLockup = await TokenLockup.deploy(
       token.address,
@@ -394,5 +380,44 @@ describe('TokenLockup unlock scheduling', async function () {
     }
 
     expect(errorMessage2).to.match(/initial release out of range/)
+  })
+
+  it('fundReleaseRelease can be scheduled in the past', async () => {
+    const totalRecipientAmount = 1000
+    const totalBatches = 3
+    const firstDelay = 0
+    const firstBatchBips = 800 // 8%
+    const batchDelay = 3600 * 24 * 4 // 4 days
+    const commence = 0 // start at the beginning of the Unix Epoch
+
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
+      .to.equal(0)
+    expect(await tokenLockup.scheduleCount())
+      .to.equal(0)
+    await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
+
+    await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      totalBatches,
+      firstDelay,
+      firstBatchBips,
+      batchDelay
+    )
+
+    await expect(tokenLockup.connect(reserveAccount).fundReleaseSchedule(
+      recipient.address,
+      490,
+      commence,
+      0 // scheduleId
+    )).to.emit(tokenLockup, 'ScheduleFunded')
+      .withArgs(reserveAccount.address, recipient.address, 0, 490, commence, 0)
+
+    expect(await tokenLockup.unlockedBalanceOf(recipient.address))
+      .to.equal('490')
+
+    expect(await tokenLockup.lockedBalanceOf(recipient.address))
+      .to.equal('0')
+
+    expect(await tokenLockup.balanceOf(recipient.address))
+      .to.equal('490')
   })
 })
