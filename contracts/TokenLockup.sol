@@ -61,6 +61,8 @@ contract TokenLockup {
     (
         uint unlockScheduleId
     ) {
+        require(delayUntilFirstReleaseInSeconds <= maxReleaseDelay, "first release > max");
+
         require(releaseCount >= 1, "< 1 release");
         require(initialReleasePortionInBips <= ScheduleCalc.BIPS_PRECISION, "release > 100%");
         if (releaseCount > 1) {

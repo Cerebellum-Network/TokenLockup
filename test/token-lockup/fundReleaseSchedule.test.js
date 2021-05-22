@@ -342,8 +342,61 @@ describe('TokenLockup unlock scheduling', async function () {
     expect(await tokenLockup.timelockCountOf(recipient.address)).to.equal(1)
   })
 
-  it('cannot specify a batch delay time after the allowed range', async () => {
+  it('cannot specify a schedule with a delay until first release that is greater than the max release delay', async () => {
     const minReleaseScheduleAmount = 100
+    const tokenLockup = await TokenLockup.deploy(
+      token.address,
+      'Xavier Yolo Zeus Token Lockup Release Scheduler',
+      'XYZ Lockup',
+      minReleaseScheduleAmount,
+      1e6 // max release delay
+    )
+
+    let error
+    try {
+      await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+        1, // totalBatches
+        1e6 + 1, // firstDelay is 1 second greater than max
+        1e4, // firstBatchBips,
+        0// periodBetweenReleases
+      )
+    } catch (e) {
+      error = e.message
+    }
+
+    expect(error).to.match(/revert first release > max/)
+  })
+
+  it('can specify a schedule with a delay up to the max release delay', async () => {
+    const minReleaseScheduleAmount = 100
+    const tokenLockup = await TokenLockup.deploy(
+      token.address,
+      'Xavier Yolo Zeus Token Lockup Release Scheduler',
+      'XYZ Lockup',
+      minReleaseScheduleAmount,
+      1e6 // max release delay
+    )
+
+    // ok to make a release schedule within the max range
+    let error2
+    try {
+      await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+        1, // totalBatches
+        1e6, // firstDelay is 1 second greater than max
+        1e4, // firstBatchBips,
+        0// periodBetweenReleases
+      )
+    } catch (e) {
+      error2 = e.message
+    }
+
+    expect(error2).to.be.undefined
+  })
+
+  it('cannot fund a batch after the allowed range', async () => {
+    const minReleaseScheduleAmount = 100
+    const totalRecipientAmount = minReleaseScheduleAmount
+
     const tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
@@ -352,19 +405,13 @@ describe('TokenLockup unlock scheduling', async function () {
       dayinSeconds
     )
 
-    const totalRecipientAmount = minReleaseScheduleAmount
-    const totalBatches = 1
-    const firstDelay = 60 * 60 * 24 + 10 // one day plus 10 seconds
-    const firstBatchBips = 100 * 100
-    const periodBetweenReleases = 1
-
     await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
 
     await tokenLockup.connect(reserveAccount).createReleaseSchedule(
-      totalBatches,
-      firstDelay,
-      firstBatchBips,
-      periodBetweenReleases
+      1, // totalBatches,
+      dayinSeconds, // firstDelay,
+      100 * 100, // firstBatchBips,
+      1 // periodBetweenReleases
     )
 
     let errorMessage2
@@ -372,7 +419,7 @@ describe('TokenLockup unlock scheduling', async function () {
       await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
         recipient.address,
         totalRecipientAmount,
-        await currentTimestamp(), // commences now but batch delay starts after the 1 day max range
+        await currentTimestamp() + 10, // commences now but release delay starts after the 1 day max range
         0 // scheduleId
       )
     } catch (e) {
@@ -384,10 +431,6 @@ describe('TokenLockup unlock scheduling', async function () {
 
   it('fundReleaseRelease can be scheduled in the past', async () => {
     const totalRecipientAmount = 1000
-    const totalBatches = 3
-    const firstDelay = 0
-    const firstBatchBips = 800 // 8%
-    const batchDelay = 3600 * 24 * 4 // 4 days
     const commence = 0 // start at the beginning of the Unix Epoch
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
@@ -397,10 +440,10 @@ describe('TokenLockup unlock scheduling', async function () {
     await token.connect(reserveAccount).approve(tokenLockup.address, totalRecipientAmount)
 
     await tokenLockup.connect(reserveAccount).createReleaseSchedule(
-      totalBatches,
-      firstDelay,
-      firstBatchBips,
-      batchDelay
+      3, // totalBatches,
+      0, // firstDelay,
+      800, // firstBatchBips,
+      dayinSeconds * 4 // batchDelay
     )
 
     await expect(tokenLockup.connect(reserveAccount).fundReleaseSchedule(
