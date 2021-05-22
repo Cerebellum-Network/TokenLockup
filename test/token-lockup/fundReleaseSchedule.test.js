@@ -390,7 +390,7 @@ describe('TokenLockup unlock scheduling', async function () {
       error2 = e.message
     }
 
-    expect(error2).to.be.undefined
+    expect(error2).to.equal(undefined)
   })
 
   it('cannot fund a batch after the allowed range', async () => {
