@@ -19,6 +19,7 @@ contract TokenLockup {
 
     ReleaseSchedule[] public releaseSchedules;
     uint public minReleaseScheduleAmount;
+    uint public maxReleaseDelay;
 
     mapping(address => Timelock[]) public timelocks;
     mapping(address => uint) internal _totalTokensUnlocked;
@@ -37,7 +38,8 @@ contract TokenLockup {
         address _token,
         string memory name_,
         string memory symbol_,
-        uint _minReleaseScheduleAmount
+        uint _minReleaseScheduleAmount,
+        uint _maxReleaseDelay
     ) {
         _name = name_;
         _symbol = symbol_;
@@ -45,6 +47,7 @@ contract TokenLockup {
 
         require(_minReleaseScheduleAmount > 0, "Min schedule amount > 0");
         minReleaseScheduleAmount = _minReleaseScheduleAmount;
+        maxReleaseDelay = _maxReleaseDelay;
     }
 
     function createReleaseSchedule(
@@ -58,6 +61,8 @@ contract TokenLockup {
     (
         uint unlockScheduleId
     ) {
+        require(delayUntilFirstReleaseInSeconds <= maxReleaseDelay, "first release > max");
+
         require(releaseCount >= 1, "< 1 release");
         require(initialReleasePortionInBips <= ScheduleCalc.BIPS_PRECISION, "release > 100%");
         if (releaseCount > 1) {
@@ -89,9 +94,16 @@ contract TokenLockup {
         require(to != address(0), "to 0 address");
         require(scheduleId < releaseSchedules.length, "bad scheduleId");
         require(amount >= releaseSchedules[scheduleId].releaseCount, "< 1 token per release");
-
         // It will revert via ERC20 implementation if there's no allowance
         require(token.transferFrom(msg.sender, address(this), amount));
+        require(
+            commencementTimestamp <= block.timestamp + maxReleaseDelay
+        , "commencement time out of range");
+
+        require(
+            commencementTimestamp + releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds  <=
+            block.timestamp + maxReleaseDelay
+        , "initial release out of range");
 
         Timelock memory timelock;
         timelock.scheduleId = scheduleId;
@@ -117,7 +129,6 @@ contract TokenLockup {
 
         return true;
     }
-
 
     function lockedBalanceOf(address who) public view returns (uint amount) {
         for (uint i = 0; i < timelocks[who].length; i++) {

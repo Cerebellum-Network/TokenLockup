@@ -30,7 +30,8 @@ async function main () {
     '0xE322488096C36edccE397D179E7b1217353884BB',
     config.token.name + ' Lockup',
     config.token.symbol + ' Lockup',
-    10 * 1e10
+    10 * 1e10,
+    346896000 // 11 years
   ]
   const release = await TokenLockup.deploy(
     ...TokenLockupArgs,

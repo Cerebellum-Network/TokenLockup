@@ -42,7 +42,8 @@ describe('TokenLockup calculate unlocked', async function () {
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
-      100 // low minimum to force rounding issues
+      100,
+      346896000 // 11 years
     )
   })
 

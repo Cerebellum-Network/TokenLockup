@@ -35,7 +35,8 @@ describe('TokenLockup create release schedule', async function () {
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
-      1e4
+      1e4,
+      346896000
     )
   })
 

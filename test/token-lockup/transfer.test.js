@@ -59,7 +59,8 @@ describe('TokenLockup unlock scheduling', async function () {
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
-      30 // low minimum to force rounding issues
+      30,
+      346896000
     )
   })
 
