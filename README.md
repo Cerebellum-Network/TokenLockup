@@ -39,7 +39,7 @@ Clone this repo and `cd` into root. Then:
 
 # Deployment
 
-Run `npx hardhat run scripts/scriptName.js --network rinkeby` for each `[scriptName]` in the scripts repository. They should be run in numeric sequence.
+Run `npx hardhat run scripts/scriptName.js --network networkName` for each `[scriptName]` in the scripts repository. The scripts should be run in numeric sequence.
 
 You will need to update the `hardhat.config.js` file the lockup tokenAddress for the the token that should be used in the TokenLockup contract. 
 
