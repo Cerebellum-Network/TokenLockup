@@ -25,6 +25,7 @@ const tenBillionWithTenDecimalPrecision = BigInt('1' + '0'.repeat(10 + 10))
 const wallet2Amount2 = BigInt('187500000000000000')
 const walletAmount1 = tenBillionWithTenDecimalPrecision - wallet2Amount2
 const sixYearsInSeconds = 189216000 // 6 years in seconds = 60 seconds * 60 minutes * 24 hours * 365 days * 6 years
+const oneHundredTokensWithTenDecimalsPrecision = 100 * 1e10
 
 module.exports = {
   defaultNetwork: 'hardhat',
@@ -40,7 +41,7 @@ module.exports = {
       },
       lockup: {
         tokenAddress: null,
-        minReleaseScheduleAmountInBaseTokens: 10 * 1e10,
+        minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
         maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
       },
     },
@@ -55,7 +56,7 @@ module.exports = {
       },
       lockup: {
         tokenAddress: null,
-        minReleaseScheduleAmountInBaseTokens: 10 * 1e10,
+        minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
         maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
       },
       url: process.env.KOVAN_NETWORK_URL,
@@ -76,7 +77,7 @@ module.exports = {
       },
       lockup: {
         tokenAddress: '0xE322488096C36edccE397D179E7b1217353884BB',
-        minReleaseScheduleAmountInBaseTokens: 10 * 1e10,
+        minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
         maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
       },
       url: process.env.RINKEBY_NETWORK_URL,
@@ -96,7 +97,7 @@ module.exports = {
       },
       lockup: {
         tokenAddress: null,
-        minReleaseScheduleAmountInBaseTokens: 10 * 1e10,
+        minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
         maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
       },
       url: process.env.MAINNET_NETWORK_URL,
