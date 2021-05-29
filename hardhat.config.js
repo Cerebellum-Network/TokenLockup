@@ -44,7 +44,7 @@ module.exports = {
         tokenLockupAddress: null,
         minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
         maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
-      },
+      }
     },
     kovan: {
       token: {

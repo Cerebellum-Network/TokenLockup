@@ -6,9 +6,9 @@ console.log('Deploy Network: ', hre.network.name)
 console.log(config.lockup)
 
 async function main () {
-  let publicAddress = hre.ethers.Wallet.fromMnemonic(config.accounts.mnemonic)
+  const publicAddress = hre.ethers.Wallet.fromMnemonic(config.accounts.mnemonic)
   console.log('signer address', publicAddress.address)
-  let signerAccount = await hre.ethers.getSigner(publicAddress.address)
+  const signerAccount = await hre.ethers.getSigner(publicAddress.address)
   await createReleaseSchedules(hre, signerAccount, config.lockup.tokenLockupAddress)
 }
 

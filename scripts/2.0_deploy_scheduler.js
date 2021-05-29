@@ -11,10 +11,10 @@ console.log('\n\nDeploy Network: ', hre.network.name)
 console.log('hardhat.config.js lockup params:')
 console.log(config.lockup)
 
-if(config.lockup.tokenAddress == null ||
-  config.lockup.tokenAddress == undefined ||
-  config.lockup.tokenAddress == "") {
-  throw "config.lockup.tokenAddress must be configured in hardhat.config.js"
+if (config.lockup.tokenAddress === null ||
+  config.lockup.tokenAddress === undefined ||
+  config.lockup.tokenAddress === '') {
+  throw new Error('config.lockup.tokenAddress must be configured in hardhat.config.js')
 }
 
 // Hardhat always runs the compile task when running scripts with its command
@@ -25,7 +25,7 @@ if(config.lockup.tokenAddress == null ||
 // await hre.run('compile');
 
 async function main () {
-  const tokenArtifact = await artifacts.readArtifact('TokenLockup')
+  const tokenArtifact = await hre.artifacts.readArtifact('TokenLockup')
   const token = new ethers.Contract(config.lockup.tokenAddress, tokenArtifact.abi, ethers.provider)
 
   console.log('token details for TokenLockup deployment:')
@@ -63,10 +63,10 @@ async function main () {
   await tokenLockup.deployTransaction.wait(5)
   console.log('5 confirmations completed')
 
-  let deploymentParamsLogFile = fs.readFileSync(deploymentParamsLog)
-  let deploymentParamsLogContent = JSON.parse(deploymentParamsLogFile)
+  const deploymentParamsLogFile = fs.readFileSync(deploymentParamsLog)
+  const deploymentParamsLogContent = JSON.parse(deploymentParamsLogFile)
 
-  let updatedContent = Object.assign(deploymentParamsLogContent, {
+  const updatedContent = Object.assign(deploymentParamsLogContent, {
     [hre.network.name.toString()]: {
       scheduleCalc: {
         args: [],
