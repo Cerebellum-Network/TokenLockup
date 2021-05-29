@@ -41,6 +41,7 @@ module.exports = {
       },
       lockup: {
         tokenAddress: null,
+        tokenLockupAddress: null,
         minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
         maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
       },
@@ -56,6 +57,7 @@ module.exports = {
       },
       lockup: {
         tokenAddress: null,
+        tokenLockupAddress: null,
         minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
         maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
       },
@@ -77,6 +79,7 @@ module.exports = {
       },
       lockup: {
         tokenAddress: '0xE322488096C36edccE397D179E7b1217353884BB',
+        tokenLockupAddress: '0x88C31f534D8518E5BF175a7dc18A776EE8a7F4E5',
         minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
         maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
       },
@@ -97,6 +100,7 @@ module.exports = {
       },
       lockup: {
         tokenAddress: null,
+        tokenLockupAddress: null,
         minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
         maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
       },

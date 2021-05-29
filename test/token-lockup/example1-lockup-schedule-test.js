@@ -4,8 +4,23 @@ const { expect } = chai
 const { solidity } = require('ethereum-waffle')
 chai.use(solidity)
 
+const advanceTime = async (days) => {
+  await hre.network.provider.request({
+    method: 'evm_increaseTime',
+    params: [days * 3600 * 24]
+  })
+  await hre.network.provider.request({
+    method: 'evm_mine',
+    params: []
+  })
+}
+
 function days (numDays) {
   return 60 * 60 * 24 * numDays
+}
+
+async function currentTimestamp (offsetInSeconds = 0) {
+  return (await hre.ethers.provider.getBlock()).timestamp + offsetInSeconds
 }
 
 const createReleaseSchedule = require('../../lib/createReleaseScheduleExample1')
@@ -43,10 +58,10 @@ describe('test lockup periods for token release example', async function () {
       1e4,
       346896000
     )
+    await createReleaseSchedule(hre, reserveAccount, tokenLockup.address)
   })
 
   it('has the expected release schedules, count and ids', async function () {
-    await createReleaseSchedule(hre, reserveAccount, tokenLockup.address)
     expect(await tokenLockup.scheduleCount()).to.equal(4)
 
     expect((await tokenLockup.releaseSchedules(0)).releaseCount).to.equal('5')
@@ -68,5 +83,9 @@ describe('test lockup periods for token release example', async function () {
     expect((await tokenLockup.releaseSchedules(3)).delayUntilFirstReleaseInSeconds).to.equal('0')
     expect((await tokenLockup.releaseSchedules(3)).initialReleasePortionInBips).to.equal('2500')
     expect((await tokenLockup.releaseSchedules(3)).periodBetweenReleasesInSeconds).to.equal(days(90))
+  })
+
+  it("releases tokens on the expected schedules", async () => {
+
   })
 })
