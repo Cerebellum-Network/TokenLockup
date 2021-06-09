@@ -1,6 +1,6 @@
 # Token Lockup and ERC20 Smart Contracts
 
-Status: feature complete, audit not complete
+Status: audit complete
 
 ## Overview
 
@@ -36,6 +36,12 @@ Clone this repo and `cd` into root. Then:
 * `npm test` runs all tests and outputs code coverage and gas cost estimate (needs a Coinmarket cap private key for USD cost)
 * `npm run coverage` runs all tests
 * `npm run fix` runs the linter and fixes the `standardjs` lint offenses or `npm run lint` to lint without fixing
+
+# Deployment
+
+Run `npx hardhat run scripts/scriptName.js --network networkName` for each `[scriptName]` in the scripts repository. The scripts should be run in numeric sequence.
+
+You will need to update the `hardhat.config.js` file the lockup tokenAddress for the the token that should be used in the TokenLockup contract. 
 
 # Token Smart Contract
 
