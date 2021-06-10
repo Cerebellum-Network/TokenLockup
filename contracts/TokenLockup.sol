@@ -79,9 +79,10 @@ contract TokenLockup {
                 periodBetweenReleasesInSeconds
             ));
 
+        unlockScheduleId = releaseSchedules.length - 1;
         emit ScheduleCreated(msg.sender, unlockScheduleId);
-        // returning the index of the newly added schedule
-        return releaseSchedules.length - 1;
+
+        return unlockScheduleId;
     }
 
     function fundReleaseSchedule(
