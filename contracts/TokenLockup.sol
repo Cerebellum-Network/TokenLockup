@@ -117,6 +117,30 @@ contract TokenLockup {
         return true;
     }
 
+    function fundCancelableReleaseSchedule(
+        address to,
+        uint amount,
+        uint commencementTimestamp, // unix timestamp
+        uint scheduleId
+    ) public returns(bool) {
+        require(fundReleaseSchedule(to, amount, commencementTimestamp, scheduleId));
+        require(timelocks[to].length > 0);
+        uint index = timelocks[to].length - 1;
+        timelocks[to][index].cancelableBy = msg.sender;
+        return true;
+    }
+
+    function cancelTimelock(address target, uint timelockIndex) public returns(bool) {
+        require(timelocks[target].length > timelockIndex, "invalid timelock");
+        require(timelocks[target][timelockIndex].cancelableBy != address(0), "uncancelable timelock");
+        require(msg.sender == timelocks[target][timelockIndex].cancelableBy, "only funder can cancel");
+
+        token.transfer(target, unlockedBalanceOfTimelock(target, timelockIndex));
+        token.transfer(msg.sender, lockedBalanceOfTimelock(target, timelockIndex));
+        _deleteTimelock(target, timelockIndex);
+        return true;
+    }
+
     function batchFundReleaseSchedule(
         address[] memory recipients,
         uint[] memory amounts,
@@ -231,15 +255,21 @@ contract TokenLockup {
         // actually burning the remaining tokens from the unlock
         token.burn(lockedBalanceOfTimelock(msg.sender, timelockIndex) + unlockedBalanceOfTimelock(msg.sender, timelockIndex));
 
-        // overwrite the timelock to delete with the timelock on the end which will be discarded
-        // if the timelock to delete is on the end, it will just be deleted in the step after the if statement
-        if (timelocks[msg.sender].length - 1 != timelockIndex) {
-            timelocks[msg.sender][timelockIndex] = timelocks[msg.sender][timelocks[msg.sender].length - 1];
-        }
-        // delete the timelock on the end
-        timelocks[msg.sender].pop();
+        _deleteTimelock(msg.sender, timelockIndex);
 
         emit TimelockBurned(msg.sender, timelockIndex);
+        return true;
+    }
+
+    function _deleteTimelock(address target, uint timelockIndex) internal returns(bool) {
+        // overwrite the timelock to delete with the timelock on the end which will be discarded
+        // if the timelock to delete is on the end, it will just be deleted in the step after the if statement
+        if (timelocks[target].length - 1 != timelockIndex) {
+            timelocks[target][timelockIndex] = timelocks[target][timelocks[target].length - 1];
+        }
+
+        // delete the timelock on the end
+        timelocks[target].pop();
         return true;
     }
 
@@ -273,7 +303,7 @@ contract TokenLockup {
         return true;
     }
 
-    function transferTimelock(address to, uint value, uint timelockId) external returns (bool) {
+    function transferTimelock(address to, uint value, uint timelockId) public returns (bool) {
         require(unlockedBalanceOfTimelock(msg.sender, timelockId) >= value, "amount > unlocked");
         timelocks[msg.sender][timelockId].tokensTransferred += value;
         require(token.transfer(to, value));

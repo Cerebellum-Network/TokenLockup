@@ -14,6 +14,7 @@ struct Timelock {
     uint commencementTimestamp;
     uint tokensTransferred;
     uint totalAmount;
+    address cancelableBy; // not cancelable unless set at the time of funding
 }
 
 library ScheduleCalc {

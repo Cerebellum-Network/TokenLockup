@@ -5,12 +5,12 @@ const { solidity } = require('ethereum-waffle')
 chai.use(solidity)
 
 describe('TokenLockup create release schedule', async function () {
-  let tokenLockup, token, reserveAccount
+  let tokenLockup, token, reserveAccount, accounts
   const decimals = 10
   const totalSupply = 8e9
 
   beforeEach(async () => {
-    const accounts = await hre.ethers.getSigners()
+    accounts = await hre.ethers.getSigners()
 
     reserveAccount = accounts[0]
 
@@ -38,17 +38,46 @@ describe('TokenLockup create release schedule', async function () {
       1e4,
       346896000
     )
+    await token.approve(tokenLockup.address, totalSupply)
   })
 
   it('increments the schedulerCount', async function () {
     await expect(tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1))
-      .to.emit(tokenLockup, "ScheduleCreated")
+      .to.emit(tokenLockup, 'ScheduleCreated')
       .withArgs(reserveAccount.address, 0)
     expect(await tokenLockup.scheduleCount()).to.equal(1)
     await expect(tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1))
       .to.emit(tokenLockup, 'ScheduleCreated')
       .withArgs(reserveAccount.address, 1)
     expect(await tokenLockup.scheduleCount()).to.equal(2)
+  })
+
+  it('should be able to check if the lockup is cancelable', async () => {
+    await expect(tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1))
+      .to.emit(tokenLockup, 'ScheduleCreated')
+      .withArgs(reserveAccount.address, 0)
+    expect(await tokenLockup.scheduleCount()).to.equal(1)
+
+    await tokenLockup.fundReleaseSchedule(accounts[1].address, 10000, 0, 0)
+    const timelock = await tokenLockup.timelockOf(accounts[1].address, 0)
+    expect(timelock.cancelableBy).to.equal('0x0000000000000000000000000000000000000000')
+  })
+
+  it('funder cannot cancel a non existent timelock', async () => {
+    await expect(tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1))
+      .to.emit(tokenLockup, 'ScheduleCreated')
+      .withArgs(reserveAccount.address, 0)
+    expect(await tokenLockup.scheduleCount()).to.equal(1)
+    await tokenLockup.fundReleaseSchedule(accounts[1].address, 10000, 0, 0)
+
+    let errorMessage
+    try {
+      await tokenLockup.connect(reserveAccount).cancelTimelock(accounts[1].address, 0)
+    } catch (e) {
+      errorMessage = e.message
+    }
+
+    expect(errorMessage).to.match(/uncancelable timelock/)
   })
 
   it('emits a CreateSchedule event', async () => {
