@@ -28,7 +28,17 @@ contract TokenLockup {
     event Approval(address indexed from, address indexed spender, uint amount);
     event TimelockBurned(address indexed from, uint timelockId);
     event ScheduleCreated(address indexed from, uint scheduleId);
-    event ScheduleFunded(address indexed from, address indexed to, uint indexed scheduleId, uint amount, uint commencementTimestamp, uint timelockId);
+
+    event ScheduleFunded(
+        address indexed from,
+        address indexed to,
+        uint indexed scheduleId,
+        uint amount,
+        uint commencementTimestamp,
+        uint timelockId,
+        bool cancelable
+    );
+    //TODO: add TimelockCanceled event
 
     /*  The constructor that specifies the token, name and symbol
         The name should specify that it is an unlock contract
@@ -90,7 +100,32 @@ contract TokenLockup {
         uint amount,
         uint commencementTimestamp, // unix timestamp
         uint scheduleId
-    ) public returns(bool) {
+    ) public returns (bool) {
+        uint timelockId = _fund(to, amount, commencementTimestamp, scheduleId);
+        emit ScheduleFunded(msg.sender, to, scheduleId, amount, commencementTimestamp, timelockId, false);
+        return true;
+    }
+
+    function fundCancelableReleaseSchedule(
+        address to,
+        uint amount,
+        uint commencementTimestamp, // unix timestamp
+        uint scheduleId
+    ) public returns (bool) {
+        uint timelockId = _fund(to, amount, commencementTimestamp, scheduleId);
+
+        timelocks[to][timelockId].cancelableBy = msg.sender;
+
+        emit ScheduleFunded(msg.sender, to, scheduleId, amount, commencementTimestamp, timelockId, true);
+        return true;
+    }
+
+    function _fund(
+        address to,
+        uint amount,
+        uint commencementTimestamp, // unix timestamp
+        uint scheduleId)
+    internal returns(uint) {
         require(amount >= minReleaseScheduleAmount, "amount < min funding");
         require(to != address(0), "to 0 address");
         require(scheduleId < releaseSchedules.length, "bad scheduleId");
@@ -102,7 +137,7 @@ contract TokenLockup {
         , "commencement time out of range");
 
         require(
-            commencementTimestamp + releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds  <=
+            commencementTimestamp + releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds <=
             block.timestamp + maxReleaseDelay
         , "initial release out of range");
 
@@ -112,25 +147,10 @@ contract TokenLockup {
         timelock.totalAmount = amount;
 
         timelocks[to].push(timelock);
-
-        emit ScheduleFunded(msg.sender, to, scheduleId, amount, commencementTimestamp, timelocks[to].length - 1);
-        return true;
+        return timelocks[to].length - 1;
     }
 
-    function fundCancelableReleaseSchedule(
-        address to,
-        uint amount,
-        uint commencementTimestamp, // unix timestamp
-        uint scheduleId
-    ) public returns(bool) {
-        require(fundReleaseSchedule(to, amount, commencementTimestamp, scheduleId));
-        require(timelocks[to].length > 0);
-        uint index = timelocks[to].length - 1;
-        timelocks[to][index].cancelableBy = msg.sender;
-        return true;
-    }
-
-    function cancelTimelock(address target, uint timelockIndex) public returns(bool) {
+    function cancelTimelock(address target, uint timelockIndex) public returns (bool) {
         require(timelocks[target].length > timelockIndex, "invalid timelock");
         require(timelocks[target][timelockIndex].cancelableBy != address(0), "uncancelable timelock");
         require(msg.sender == timelocks[target][timelockIndex].cancelableBy, "only funder can cancel");
@@ -246,7 +266,7 @@ contract TokenLockup {
         return token.balanceOf(address(this));
     }
 
-    function burn(uint timelockIndex, uint confirmationIdPlusOne) external returns(bool) {
+    function burn(uint timelockIndex, uint confirmationIdPlusOne) external returns (bool) {
         require(timelockIndex < timelocks[msg.sender].length, "No schedule");
 
         // this also protects from overflow below
@@ -261,7 +281,7 @@ contract TokenLockup {
         return true;
     }
 
-    function _deleteTimelock(address target, uint timelockIndex) internal returns(bool) {
+    function _deleteTimelock(address target, uint timelockIndex) internal returns (bool) {
         // overwrite the timelock to delete with the timelock on the end which will be discarded
         // if the timelock to delete is on the end, it will just be deleted in the step after the if statement
         if (timelocks[target].length - 1 != timelockIndex) {

@@ -89,7 +89,7 @@ describe('TokenLockup unlock scheduling', async function () {
       commence,
       0 // scheduleId
     )).to.emit(tokenLockup, 'ScheduleFunded')
-      .withArgs(reserveAccount.address, recipient.address, 0, 490, commence, 0)
+      .withArgs(reserveAccount.address, recipient.address, 0, 490, commence, 0, false)
 
     await expect(tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
@@ -97,7 +97,7 @@ describe('TokenLockup unlock scheduling', async function () {
       commence,
       0 // scheduleId
     )).to.emit(tokenLockup, 'ScheduleFunded')
-      .withArgs(reserveAccount.address, recipient.address, 0, 510, commence, 1)
+      .withArgs(reserveAccount.address, recipient.address, 0, 510, commence, 1, false)
   })
 
   it('timelock creation with immediately unlocked tokens', async () => {
@@ -452,7 +452,7 @@ describe('TokenLockup unlock scheduling', async function () {
       commence,
       0 // scheduleId
     )).to.emit(tokenLockup, 'ScheduleFunded')
-      .withArgs(reserveAccount.address, recipient.address, 0, 490, commence, 0)
+      .withArgs(reserveAccount.address, recipient.address, 0, 490, commence, 0, false)
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('490')

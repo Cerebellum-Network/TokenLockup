@@ -46,6 +46,7 @@ describe('TokenLockup create release schedule', async function () {
       .to.emit(tokenLockup, 'ScheduleCreated')
       .withArgs(reserveAccount.address, 0)
     expect(await tokenLockup.scheduleCount()).to.equal(1)
+
     await expect(tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1))
       .to.emit(tokenLockup, 'ScheduleCreated')
       .withArgs(reserveAccount.address, 1)

@@ -59,6 +59,24 @@ describe('TokenLockup calculate unlocked', async function () {
     )
   })
 
+  it('should emit an event when the release schedule is funded', async () => {
+    const tx = await tokenLockup.connect(reserveAccount).createReleaseSchedule(
+      2, // totalBatches
+      days(30), // firstDelay
+      5000, // firstBatchBips
+      days(30) // batchDelay
+    )
+
+    const scheduledId = tx.value.toString()
+    const amount = 100
+    await token.approve(tokenLockup.address, amount)
+    const commenced = await currentTimestamp()
+
+    await expect(tokenLockup.fundCancelableReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId))
+      .to.emit(tokenLockup, 'ScheduleFunded')
+      .withArgs(reserveAccount.address, recipientAccount.address, scheduledId, amount, commenced, 0, true)
+  })
+
   describe('simple 1 month delay then 50% for 2 monthly releases', async () => {
     let scheduledId, commenced, amount
 
