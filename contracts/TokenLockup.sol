@@ -294,15 +294,17 @@ contract TokenLockup {
         return true;
     }
 
-    function _deleteTimelock(address target, uint timelockIndex) internal returns (bool) {
+    function _deleteTimelock(address targetAddress, uint deletedTimelockIndex) internal returns (bool) {
+        uint indexOfLastTimelock = timelocks[targetAddress].length - 1;
+
         // overwrite the timelock to delete with the timelock on the end which will be discarded
         // if the timelock to delete is on the end, it will just be deleted in the step after the if statement
-        if (timelocks[target].length - 1 != timelockIndex) {
-            timelocks[target][timelockIndex] = timelocks[target][timelocks[target].length - 1];
+        if (indexOfLastTimelock != deletedTimelockIndex) {
+            timelocks[targetAddress][deletedTimelockIndex] = timelocks[targetAddress][indexOfLastTimelock];
         }
 
-        // delete the timelock on the end
-        timelocks[target].pop();
+        // delete the duplicate timelock on the end
+        timelocks[targetAddress].pop();
         return true;
     }
 
