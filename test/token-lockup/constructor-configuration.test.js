@@ -12,13 +12,7 @@ describe('TokenLockup deployment test', async () => {
   const schedulerSymbol = 'XYZ Lockup'
 
   beforeEach(async () => {
-    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
-    const scheduleCalc = await ScheduleCalc.deploy()
-    TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
-      libraries: {
-        ScheduleCalc: scheduleCalc.address
-      }
-    })
+    TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
     Token = await hre.ethers.getContractFactory('Token')
     accounts = await hre.ethers.getSigners()
 

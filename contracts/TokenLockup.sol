@@ -3,7 +3,6 @@
 pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./ScheduleCalc.sol";
 
 // interface with ERC20 and the burn function interface from the associated Token contract
 interface IERC20Burnable is IERC20 {
@@ -17,9 +16,25 @@ contract TokenLockup {
     string private _name;
     string private _symbol;
 
+    struct ReleaseSchedule {
+        uint releaseCount;
+        uint delayUntilFirstReleaseInSeconds;
+        uint initialReleasePortionInBips;
+        uint periodBetweenReleasesInSeconds;
+    }
+
+    struct Timelock {
+        uint scheduleId;
+        uint commencementTimestamp;
+        uint tokensTransferred;
+        uint totalAmount;
+        address cancelableBy; // not cancelable unless set at the time of funding
+    }
+
     ReleaseSchedule[] public releaseSchedules;
     uint public minTimelockAmount;
     uint public maxReleaseDelay;
+    uint constant BIPS_PRECISION = 10000;
 
     mapping(address => Timelock[]) public timelocks;
     mapping(address => uint) internal _totalTokensUnlocked;
@@ -81,12 +96,12 @@ contract TokenLockup {
         require(delayUntilFirstReleaseInSeconds <= maxReleaseDelay, "first release > max");
 
         require(releaseCount >= 1, "< 1 release");
-        require(initialReleasePortionInBips <= ScheduleCalc.BIPS_PRECISION, "release > 100%");
+        require(initialReleasePortionInBips <= BIPS_PRECISION, "release > 100%");
         if (releaseCount > 1) {
             require(periodBetweenReleasesInSeconds > 0, "period = 0");
         }
         if (releaseCount == 1) {
-            require(initialReleasePortionInBips == ScheduleCalc.BIPS_PRECISION, "released < 100%");
+            require(initialReleasePortionInBips == BIPS_PRECISION, "released < 100%");
         }
 
         releaseSchedules.push(ReleaseSchedule(
@@ -346,7 +361,7 @@ contract TokenLockup {
     }
 
     function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, uint scheduleId) public view returns (uint unlocked) {
-        return ScheduleCalc.calculateUnlocked(commencedTimestamp, currentTimestamp, amount, releaseSchedules[scheduleId]);
+        return calculateUnlockedFormula(commencedTimestamp, currentTimestamp, amount, releaseSchedules[scheduleId]);
     }
 
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
@@ -368,5 +383,50 @@ contract TokenLockup {
 
     function timelockCountOf(address who) external view returns (uint) {
         return timelocks[who].length;
+    }
+
+    function calculateUnlockedFormula(
+        uint commencedTimestamp,
+        uint currentTimestamp,
+        uint amount,
+        ReleaseSchedule memory releaseSchedule)
+    public pure returns (uint unlocked) {
+        if(commencedTimestamp > currentTimestamp) {
+            return 0;
+        }
+        uint secondsElapsed = currentTimestamp - commencedTimestamp;
+
+        // return the full amount if the total lockup period has expired
+        // unlocked amounts in each period are truncated and round down remainders smaller than the smallest unit
+        // unlocking the full amount unlocks any remainder amounts in the final unlock period
+        // this is done first to reduce computation
+        if (secondsElapsed >= releaseSchedule.delayUntilFirstReleaseInSeconds +
+        (releaseSchedule.periodBetweenReleasesInSeconds * (releaseSchedule.releaseCount - 1))) {
+            return amount;
+        }
+
+        // unlock the initial release if the delay has elapsed
+        if (secondsElapsed >= releaseSchedule.delayUntilFirstReleaseInSeconds) {
+            unlocked = (amount * releaseSchedule.initialReleasePortionInBips) / BIPS_PRECISION;
+
+            // if at least one period after the delay has passed
+            if (secondsElapsed - releaseSchedule.delayUntilFirstReleaseInSeconds
+                >= releaseSchedule.periodBetweenReleasesInSeconds) {
+
+                // calculate the number of additional periods that have passed (not including the initial release)
+                // this discards any remainders (ie it truncates / rounds down)
+                uint additionalUnlockedPeriods =
+                (secondsElapsed - releaseSchedule.delayUntilFirstReleaseInSeconds) /
+                releaseSchedule.periodBetweenReleasesInSeconds;
+
+                // calculate the amount of unlocked tokens for the additionalUnlockedPeriods
+                // multiplication is applied before division to delay truncating to the smallest unit
+                // this distributes unlocked tokens more evenly across unlock periods
+                // than truncated division followed by multiplication
+                unlocked += ((amount - unlocked) * additionalUnlockedPeriods) / (releaseSchedule.releaseCount - 1);
+            }
+        }
+
+        return unlocked;
     }
 }
