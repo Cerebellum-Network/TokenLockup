@@ -38,7 +38,14 @@ contract TokenLockup {
         uint timelockId,
         bool cancelable
     );
-    //TODO: add TimelockCanceled event
+
+    event ScheduleCanceled(
+        address indexed canceledBy,
+        address indexed target,
+        uint timelockIndex,
+        uint canceledAmount,
+        uint paidAmount
+    );
 
     /*  The constructor that specifies the token, name and symbol
         The name should specify that it is an unlock contract
@@ -155,8 +162,14 @@ contract TokenLockup {
         require(timelocks[target][timelockIndex].cancelableBy != address(0), "uncancelable timelock");
         require(msg.sender == timelocks[target][timelockIndex].cancelableBy, "only funder can cancel");
 
-        token.transfer(target, unlockedBalanceOfTimelock(target, timelockIndex));
-        token.transfer(msg.sender, lockedBalanceOfTimelock(target, timelockIndex));
+        uint canceledAmount = lockedBalanceOfTimelock(target, timelockIndex);
+        uint paidAmount = unlockedBalanceOfTimelock(target, timelockIndex);
+
+        token.transfer(msg.sender, canceledAmount);
+        token.transfer(target, paidAmount);
+
+        emit ScheduleCanceled(msg.sender, target, timelockIndex, canceledAmount, paidAmount);
+
         _deleteTimelock(target, timelockIndex);
         return true;
     }

@@ -62,7 +62,7 @@ describe('TokenLockup unlock scheduling', async function () {
     )
   })
 
-  it('fundReleaseRelease schedule emits a ScheduleFunded event', async () => {
+  it('fundReleaseSchedule emits a ScheduleFunded event', async () => {
     const totalRecipientAmount = 1000
     const totalBatches = 3
     const firstDelay = 0

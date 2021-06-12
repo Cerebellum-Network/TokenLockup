@@ -54,12 +54,12 @@ describe('TokenLockup calculate unlocked', async function () {
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
       'XYZ Lockup',
-      100,
+      50,
       346896000 // 11 years
     )
   })
 
-  it('should emit an event when the release schedule is funded', async () => {
+  it('should emit an event with the correct scheduleId when the release schedule is funded and canceled', async () => {
     const tx = await tokenLockup.connect(reserveAccount).createReleaseSchedule(
       2, // totalBatches
       days(30), // firstDelay
@@ -68,13 +68,42 @@ describe('TokenLockup calculate unlocked', async function () {
     )
 
     const scheduledId = tx.value.toString()
-    const amount = 100
-    await token.approve(tokenLockup.address, amount)
+    const amount = 50
+    await token.approve(tokenLockup.address, amount * 2)
     const commenced = await currentTimestamp()
 
     await expect(tokenLockup.fundCancelableReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId))
       .to.emit(tokenLockup, 'ScheduleFunded')
       .withArgs(reserveAccount.address, recipientAccount.address, scheduledId, amount, commenced, 0, true)
+
+
+    await expect(tokenLockup.fundCancelableReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId))
+      .to.emit(tokenLockup, 'ScheduleFunded')
+      .withArgs(reserveAccount.address, recipientAccount.address, scheduledId, amount, commenced, 1, true)
+
+    expect(await tokenLockup.timelockCountOf(recipientAccount.address)).to.equal(2)
+    await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
+      .to.emit(tokenLockup, 'ScheduleCanceled')
+      .withArgs(
+        reserveAccount.address, // canceledBy
+        recipientAccount.address, // target
+        0, // timelock
+        50, // canceledAmount
+        0 // paidAmount
+      )
+
+    expect(await tokenLockup.timelockCountOf(recipientAccount.address)).to.equal(1)
+    await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
+      .to.emit(tokenLockup, 'ScheduleCanceled')
+      .withArgs(
+        reserveAccount.address, // canceledBy
+        recipientAccount.address, // target
+        0, // timelock
+        50, // canceledAmount
+        0 // paidAmount
+      )
+
+    expect(await tokenLockup.timelockCountOf(recipientAccount.address)).to.equal(0)
   })
 
   describe('simple 1 month delay then 50% for 2 monthly releases', async () => {
@@ -105,7 +134,15 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(0)
       expect(await token.balanceOf(reserveAccount.address)).to.equal(0)
 
-      await tokenLockup.cancelTimelock(recipientAccount.address, 0)
+      await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
+        .to.emit(tokenLockup, 'ScheduleCanceled')
+        .withArgs(
+          reserveAccount.address, // canceledBy
+          recipientAccount.address, // target
+          0, // timelock
+          100, // canceledAmount
+          0 // paidAmount
+        )
       expect(await token.balanceOf(reserveAccount.address)).to.equal(100)
       expect(await token.balanceOf(recipientAccount.address)).to.equal(0)
       expect(await tokenLockup.lockedBalanceOf(recipientAccount.address)).to.equal(0)
@@ -117,7 +154,15 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.lockedBalanceOf(recipientAccount.address)).to.equal(50)
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(50)
 
-      await tokenLockup.cancelTimelock(recipientAccount.address, 0)
+      await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
+        .to.emit(tokenLockup, 'ScheduleCanceled')
+        .withArgs(
+          reserveAccount.address, // canceledBy
+          recipientAccount.address, // target
+          0, // timelock
+          50, // canceledAmount
+          50 // paidAmount
+        )
       expect(await token.balanceOf(reserveAccount.address)).to.equal(50)
       expect(await token.balanceOf(recipientAccount.address)).to.equal(50)
       expect(await tokenLockup.lockedBalanceOf(recipientAccount.address)).to.equal(0)
@@ -129,7 +174,15 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.lockedBalanceOf(recipientAccount.address)).to.equal(0)
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(100)
 
-      await tokenLockup.cancelTimelock(recipientAccount.address, 0)
+      await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
+        .to.emit(tokenLockup, 'ScheduleCanceled')
+        .withArgs(
+          reserveAccount.address, // canceledBy
+          recipientAccount.address, // target
+          0, // timelock
+          100, // canceledAmount
+          0 // paidAmount
+        )
       expect(await token.balanceOf(reserveAccount.address)).to.equal(0)
       expect(await token.balanceOf(recipientAccount.address)).to.equal(100)
       expect(await tokenLockup.lockedBalanceOf(recipientAccount.address)).to.equal(0)
