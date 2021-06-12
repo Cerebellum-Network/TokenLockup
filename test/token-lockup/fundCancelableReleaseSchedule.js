@@ -179,8 +179,8 @@ describe('TokenLockup calculate unlocked', async function () {
           reserveAccount.address, // canceledBy
           recipientAccount.address, // target
           0, // timelock
-          100, // canceledAmount
-          0 // paidAmount
+          0, // canceledAmount
+          100 // paidAmount
         )
       expect(await token.balanceOf(reserveAccount.address)).to.equal(0)
       expect(await token.balanceOf(recipientAccount.address)).to.equal(100)

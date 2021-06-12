@@ -18,7 +18,7 @@ contract TokenLockup {
     string private _symbol;
 
     ReleaseSchedule[] public releaseSchedules;
-    uint public minReleaseScheduleAmount;
+    uint public minTimelockAmount;
     uint public maxReleaseDelay;
 
     mapping(address => Timelock[]) public timelocks;
@@ -55,15 +55,15 @@ contract TokenLockup {
         address _token,
         string memory name_,
         string memory symbol_,
-        uint _minReleaseScheduleAmount,
+        uint _minTimelockAmount,
         uint _maxReleaseDelay
     ) {
         _name = name_;
         _symbol = symbol_;
         token = IERC20Burnable(_token);
 
-        require(_minReleaseScheduleAmount > 0, "Min schedule amount > 0");
-        minReleaseScheduleAmount = _minReleaseScheduleAmount;
+        require(_minTimelockAmount > 0, "Min timelock amount > 0");
+        minTimelockAmount = _minTimelockAmount;
         maxReleaseDelay = _maxReleaseDelay;
     }
 
@@ -133,7 +133,7 @@ contract TokenLockup {
         uint commencementTimestamp, // unix timestamp
         uint scheduleId)
     internal returns(uint) {
-        require(amount >= minReleaseScheduleAmount, "amount < min funding");
+        require(amount >= minTimelockAmount, "amount < min funding");
         require(to != address(0), "to 0 address");
         require(scheduleId < releaseSchedules.length, "bad scheduleId");
         require(amount >= releaseSchedules[scheduleId].releaseCount, "< 1 token per release");

@@ -45,7 +45,7 @@ describe('TokenLockup deployment test', async () => {
     expect(await tokenLockup.symbol()).to.equal(schedulerSymbol)
     expect(await tokenLockup.decimals()).to.equal(decimals)
     expect(await tokenLockup.token()).to.equal(token.address)
-    expect(await tokenLockup.minReleaseScheduleAmount()).to.equal('10000')
+    expect(await tokenLockup.minTimelockAmount()).to.equal('10000')
   })
 
   it('must deploy with minReleaseScheduleAmount > 0 ', async () => {
@@ -61,6 +61,6 @@ describe('TokenLockup deployment test', async () => {
     } catch (e) {
       errorMessage = e.message
     }
-    expect(errorMessage).to.match(/Min schedule amount > 0/)
+    expect(errorMessage).to.match(/Min timelock amount > 0/)
   })
 })
