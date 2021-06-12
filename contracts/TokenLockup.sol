@@ -39,7 +39,7 @@ contract TokenLockup {
         bool cancelable
     );
 
-    event ScheduleCanceled(
+    event TimelockCanceled(
         address indexed canceledBy,
         address indexed target,
         uint timelockIndex,
@@ -168,7 +168,7 @@ contract TokenLockup {
         token.transfer(msg.sender, canceledAmount);
         token.transfer(target, paidAmount);
 
-        emit ScheduleCanceled(msg.sender, target, timelockIndex, canceledAmount, paidAmount);
+        emit TimelockCanceled(msg.sender, target, timelockIndex, canceledAmount, paidAmount);
 
         _deleteTimelock(target, timelockIndex);
         return true;

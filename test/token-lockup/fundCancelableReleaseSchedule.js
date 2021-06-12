@@ -76,14 +76,13 @@ describe('TokenLockup calculate unlocked', async function () {
       .to.emit(tokenLockup, 'ScheduleFunded')
       .withArgs(reserveAccount.address, recipientAccount.address, scheduledId, amount, commenced, 0, true)
 
-
     await expect(tokenLockup.fundCancelableReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId))
       .to.emit(tokenLockup, 'ScheduleFunded')
       .withArgs(reserveAccount.address, recipientAccount.address, scheduledId, amount, commenced, 1, true)
 
     expect(await tokenLockup.timelockCountOf(recipientAccount.address)).to.equal(2)
     await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
-      .to.emit(tokenLockup, 'ScheduleCanceled')
+      .to.emit(tokenLockup, 'TimelockCanceled')
       .withArgs(
         reserveAccount.address, // canceledBy
         recipientAccount.address, // target
@@ -94,7 +93,7 @@ describe('TokenLockup calculate unlocked', async function () {
 
     expect(await tokenLockup.timelockCountOf(recipientAccount.address)).to.equal(1)
     await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
-      .to.emit(tokenLockup, 'ScheduleCanceled')
+      .to.emit(tokenLockup, 'TimelockCanceled')
       .withArgs(
         reserveAccount.address, // canceledBy
         recipientAccount.address, // target
@@ -135,7 +134,7 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await token.balanceOf(reserveAccount.address)).to.equal(0)
 
       await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
-        .to.emit(tokenLockup, 'ScheduleCanceled')
+        .to.emit(tokenLockup, 'TimelockCanceled')
         .withArgs(
           reserveAccount.address, // canceledBy
           recipientAccount.address, // target
@@ -155,7 +154,7 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(50)
 
       await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
-        .to.emit(tokenLockup, 'ScheduleCanceled')
+        .to.emit(tokenLockup, 'TimelockCanceled')
         .withArgs(
           reserveAccount.address, // canceledBy
           recipientAccount.address, // target
@@ -175,7 +174,7 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(100)
 
       await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
-        .to.emit(tokenLockup, 'ScheduleCanceled')
+        .to.emit(tokenLockup, 'TimelockCanceled')
         .withArgs(
           reserveAccount.address, // canceledBy
           recipientAccount.address, // target
