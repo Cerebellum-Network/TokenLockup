@@ -34,18 +34,24 @@
     "dotenv": "^8.2.0",
     "ethereum-waffle": "^3.3.0",
     "openzeppelin-test-helpers": "^0.5.1",
-    "solc": "^0.8.3"
+    "solc": "^0.8.3",
+    "solidity-docgen": "^0.5.13"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.0.1",
     "chai": "^4.3.4",
     "hardhat": "^2.2.1",
+    "hardhat-docgen": "^1.1.1",
     "hardhat-gas-reporter": "^1.0.4",
     "solidity-coverage": "^0.7.16",
     "standard": "^16.0.3"
   },
+
   "standard": {
+    "ignore": [
+      "/docs/**"
+    ],
     "globals": [
       "describe",
       "context",
