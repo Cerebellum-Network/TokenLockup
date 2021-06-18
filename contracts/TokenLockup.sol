@@ -280,7 +280,7 @@ contract TokenLockup {
         @return locked Balance of the timelock
     */
     function lockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint locked) {
-        return timelocks[who][timelockIndex].totalAmount - totalUnlockedToDateOfTimelock(who, timelockIndex);
+        return viewTimelock(who, timelockIndex).totalAmount - totalUnlockedToDateOfTimelock(who, timelockIndex);
     }
 
     /**
@@ -290,7 +290,7 @@ contract TokenLockup {
         @return unlocked balance of the timelock
     */
     function unlockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint unlocked) {
-        return totalUnlockedToDateOfTimelock(who, timelockIndex) - timelocks[who][timelockIndex].tokensTransferred;
+        return totalUnlockedToDateOfTimelock(who, timelockIndex) - viewTimelock(who, timelockIndex).tokensTransferred;
     }
 
     /**
@@ -301,10 +301,10 @@ contract TokenLockup {
     */
     function totalUnlockedToDateOfTimelock(address who, uint timelockIndex) public view returns (uint total) {
         return calculateUnlocked(
-            timelocks[who][timelockIndex].commencementTimestamp,
+            viewTimelock(who, timelockIndex).commencementTimestamp,
             block.timestamp,
-            timelocks[who][timelockIndex].totalAmount,
-            timelocks[who][timelockIndex].scheduleId
+            viewTimelock(who, timelockIndex).totalAmount,
+            viewTimelock(who, timelockIndex).scheduleId
         );
     }
 
