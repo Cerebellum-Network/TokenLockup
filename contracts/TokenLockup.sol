@@ -200,7 +200,7 @@ contract TokenLockup {
         timelock.totalAmount = amount;
 
         timelocks[to].push(timelock);
-        return timelocks[to].length - 1;
+        return timelockCountOf(to) - 1;
     }
 
     /**
@@ -212,7 +212,7 @@ contract TokenLockup {
         @return success Always returns true on completion so that a function calling it can revert if the required call did not succeed
     */
     function cancelTimelock(address target, uint timelockIndex) public returns (bool success) {
-        require(timelocks[target].length > timelockIndex, "invalid timelock");
+        require(timelockCountOf(target) > timelockIndex, "invalid timelock");
         require(timelocks[target][timelockIndex].cancelableBy != address(0), "uncancelable timelock");
         require(msg.sender == timelocks[target][timelockIndex].cancelableBy, "only funder can cancel");
 
@@ -431,7 +431,7 @@ contract TokenLockup {
         @return bool returns true when completed
     */
     function burn(uint timelockIndex, uint confirmationIdPlusOne) external returns (bool) {
-        require(timelockIndex < timelocks[msg.sender].length, "No schedule");
+        require(timelockIndex < timelockCountOf(msg.sender), "No schedule");
 
         // this also protects from overflow below
         require(confirmationIdPlusOne == timelockIndex + 1, "Burn not confirmed");
@@ -446,7 +446,7 @@ contract TokenLockup {
     }
 
     function _deleteTimelock(address targetAddress, uint deletedTimelockIndex) internal returns (bool) {
-        uint indexOfLastTimelock = timelocks[targetAddress].length - 1;
+        uint indexOfLastTimelock = timelockCountOf(targetAddress) - 1;
 
         // overwrite the timelock to delete with the timelock on the end which will be discarded
         // if the timelock to delete is on the end, it will just be deleted in the step after the if statement
@@ -465,7 +465,7 @@ contract TokenLockup {
         uint remainingTransfer = value;
 
         // transfer from unlocked tokens
-        for (uint i = 0; i < timelocks[from].length; i++) {
+        for (uint i = 0; i < timelockCountOf(from); i++) {
             // if the timelock has no value left
             if (timelocks[from][i].tokensTransferred == timelocks[from][i].totalAmount) {
                 continue;
