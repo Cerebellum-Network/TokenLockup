@@ -256,7 +256,7 @@ contract TokenLockup {
         @return amount The total locked amount of tokens for all of the who address's timelocks
     */
     function lockedBalanceOf(address who) public view returns (uint amount) {
-        for (uint i = 0; i < timelocks[who].length; i++) {
+        for (uint i = 0; i < timelockCountOf(who); i++) {
             amount += lockedBalanceOfTimelock(who, i);
         }
         return amount;
@@ -267,7 +267,7 @@ contract TokenLockup {
         @return amount The total unlocked amount of tokens for all of the who address's timelocks
     */
     function unlockedBalanceOf(address who) public view returns (uint amount) {
-        for (uint i = 0; i < timelocks[who].length; i++) {
+        for (uint i = 0; i < timelockCountOf(who); i++) {
             amount += unlockedBalanceOfTimelock(who, i);
         }
         return amount;
@@ -280,7 +280,7 @@ contract TokenLockup {
         @return locked Balance of the timelock
     */
     function lockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint locked) {
-        return viewTimelock(who, timelockIndex).totalAmount - totalUnlockedToDateOfTimelock(who, timelockIndex);
+        return timelockOf(who, timelockIndex).totalAmount - totalUnlockedToDateOfTimelock(who, timelockIndex);
     }
 
     /**
@@ -290,7 +290,7 @@ contract TokenLockup {
         @return unlocked balance of the timelock
     */
     function unlockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint unlocked) {
-        return totalUnlockedToDateOfTimelock(who, timelockIndex) - viewTimelock(who, timelockIndex).tokensTransferred;
+        return totalUnlockedToDateOfTimelock(who, timelockIndex) - timelockOf(who, timelockIndex).tokensTransferred;
     }
 
     /**
@@ -300,7 +300,7 @@ contract TokenLockup {
         @return total Locked and unlocked amount for the specified timelock
     */
     function totalUnlockedToDateOfTimelock(address who, uint timelockIndex) public view returns (uint total) {
-        Timelock memory _timelock = viewTimelock(who, timelockIndex);
+        Timelock memory _timelock = timelockOf(who, timelockIndex);
 
         return calculateUnlocked(
             _timelock.commencementTimestamp,
@@ -308,17 +308,6 @@ contract TokenLockup {
             _timelock.totalAmount,
             _timelock.scheduleId
         );
-    }
-
-    /**
-        @notice Get the struct details for an address's specific timelock
-        @param who Address to check
-        @param index The index of the timelock for the who address
-        @return timelock Struct with the attributes of the timelock
-    */
-    function viewTimelock(address who, uint256 index) public view
-    returns (Timelock memory timelock) {
-        return timelocks[who][index];
     }
 
     /**
@@ -544,13 +533,18 @@ contract TokenLockup {
         return releaseSchedules.length;
     }
 
-    // @notice returns the Timelock attributes for an address's specific timelock
-    function timelockOf(address who, uint index) external view returns (Timelock memory timelock) {
+    /**
+        @notice Get the struct details for an address's specific timelock
+        @param who Address to check
+        @param index The index of the timelock for the who address
+        @return timelock Struct with the attributes of the timelock
+    */
+    function timelockOf(address who, uint index) public view returns (Timelock memory timelock) {
         return timelocks[who][index];
     }
 
     // @notice returns the total count of timelocks for a specific address
-    function timelockCountOf(address who) external view returns (uint) {
+    function timelockCountOf(address who) public view returns (uint) {
         return timelocks[who].length;
     }
 
