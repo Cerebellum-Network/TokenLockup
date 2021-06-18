@@ -178,7 +178,7 @@ contract TokenLockup {
         uint amount,
         uint commencementTimestamp, // unix timestamp
         uint scheduleId)
-    internal returns(uint) {
+    internal returns (uint) {
         require(amount >= minTimelockAmount, "amount < min funding");
         require(to != address(0), "to 0 address");
         require(scheduleId < releaseSchedules.length, "bad scheduleId");
@@ -300,11 +300,13 @@ contract TokenLockup {
         @return total Locked and unlocked amount for the specified timelock
     */
     function totalUnlockedToDateOfTimelock(address who, uint timelockIndex) public view returns (uint total) {
+        Timelock memory _timelock = viewTimelock(who, timelockIndex);
+
         return calculateUnlocked(
-            viewTimelock(who, timelockIndex).commencementTimestamp,
+            _timelock.commencementTimestamp,
             block.timestamp,
-            viewTimelock(who, timelockIndex).totalAmount,
-            viewTimelock(who, timelockIndex).scheduleId
+            _timelock.totalAmount,
+            _timelock.scheduleId
         );
     }
 
@@ -568,7 +570,7 @@ contract TokenLockup {
         uint amount,
         ReleaseSchedule memory releaseSchedule)
     public pure returns (uint unlocked) {
-        if(commencedTimestamp > currentTimestamp) {
+        if (commencedTimestamp > currentTimestamp) {
             return 0;
         }
         uint secondsElapsed = currentTimestamp - commencedTimestamp;
