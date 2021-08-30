@@ -66,38 +66,40 @@ describe('TokenLockup calculate unlocked', async function () {
     const amount = 50
     await token.approve(tokenLockup.address, amount * 2)
     const commenced = await currentTimestamp()
+    const canceler = accounts[2]
 
-    await expect(tokenLockup.fundCancelableReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId))
+    await expect(tokenLockup.fundCancelableReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId, [canceler.address]))
       .to.emit(tokenLockup, 'ScheduleFunded')
       .withArgs(reserveAccount.address, recipientAccount.address, scheduledId, amount, commenced, 0, true)
 
-    await expect(tokenLockup.fundCancelableReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId))
+    await expect(tokenLockup.fundCancelableReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId, [canceler.address]))
       .to.emit(tokenLockup, 'ScheduleFunded')
       .withArgs(reserveAccount.address, recipientAccount.address, scheduledId, amount, commenced, 1, true)
 
     expect(await tokenLockup.timelockCountOf(recipientAccount.address)).to.equal(2)
-    await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
+    await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0, accounts[1].address))
+      .to.revertedWith('You are not allowed to cancel this timelock')
+    await expect(tokenLockup.connect(canceler).cancelTimelock(recipientAccount.address, 0, accounts[1].address))
       .to.emit(tokenLockup, 'TimelockCanceled')
       .withArgs(
-        reserveAccount.address, // canceledBy
+        canceler.address, // canceledBy
         recipientAccount.address, // target
         0, // timelock
         50, // canceledAmount
         0 // paidAmount
       )
 
-    expect(await tokenLockup.timelockCountOf(recipientAccount.address)).to.equal(1)
-    await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
+    await expect(tokenLockup.connect(canceler).cancelTimelock(recipientAccount.address, 0, accounts[1].address))
+      .to.revertedWith('Timelock has no value left')
+    await expect(tokenLockup.connect(canceler).cancelTimelock(recipientAccount.address, 1, accounts[1].address))
       .to.emit(tokenLockup, 'TimelockCanceled')
       .withArgs(
-        reserveAccount.address, // canceledBy
+        canceler.address, // canceledBy
         recipientAccount.address, // target
-        0, // timelock
+        1, // timelock
         50, // canceledAmount
         0 // paidAmount
       )
-
-    expect(await tokenLockup.timelockCountOf(recipientAccount.address)).to.equal(0)
   })
 
   describe('simple 1 month delay then 50% for 2 monthly releases', async () => {
@@ -115,12 +117,12 @@ describe('TokenLockup calculate unlocked', async function () {
       amount = 100
       await token.approve(tokenLockup.address, amount)
       commenced = await currentTimestamp()
-      await tokenLockup.fundCancelableReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId)
+      await tokenLockup.fundCancelableReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId, [reserveAccount.address])
     })
 
     it('should be able to check if the lockup is cancelable', async () => {
       const timelock = await tokenLockup.timelockOf(recipientAccount.address, 0)
-      expect(timelock.cancelableBy).to.equal(reserveAccount.address)
+      expect(timelock.cancelableBy[0]).to.equal(reserveAccount.address)
     })
 
     it('0% unlocked at start and 100% cancelable', async () => {
@@ -128,7 +130,7 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(0)
       expect(await token.balanceOf(reserveAccount.address)).to.equal(0)
 
-      await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
+      await expect(tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 0, reserveAccount.address))
         .to.emit(tokenLockup, 'TimelockCanceled')
         .withArgs(
           reserveAccount.address, // canceledBy
@@ -148,7 +150,7 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.lockedBalanceOf(recipientAccount.address)).to.equal(50)
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(50)
 
-      await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
+      await expect(tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 0, reserveAccount.address))
         .to.emit(tokenLockup, 'TimelockCanceled')
         .withArgs(
           reserveAccount.address, // canceledBy
@@ -168,7 +170,7 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.lockedBalanceOf(recipientAccount.address)).to.equal(0)
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(100)
 
-      await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
+      await expect(tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 0, reserveAccount.address))
         .to.emit(tokenLockup, 'TimelockCanceled')
         .withArgs(
           reserveAccount.address, // canceledBy
@@ -183,26 +185,26 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(0)
     })
 
-    it('only funder can cancel', async () => {
+    it('only canceler can cancel', async () => {
       let errorMessage
 
       try {
-        await tokenLockup.connect(recipientAccount).cancelTimelock(recipientAccount.address, 0)
+        await tokenLockup.connect(accounts[1]).cancelTimelock(recipientAccount.address, 0, reserveAccount.address)
       } catch (e) {
         errorMessage = e.message
       }
 
-      expect(errorMessage).to.match(/only funder can cancel/)
+      expect(errorMessage).to.match(/You are not allowed to cancel this timelock/)
       expect(await tokenLockup.lockedBalanceOf(recipientAccount.address)).to.equal(100)
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(0)
       expect(await token.balanceOf(reserveAccount.address)).to.equal(0)
     })
 
-    it('funder cannot cancel a non existent timelock', async () => {
+    it('cannot cancel a non existent timelock', async () => {
       let errorMessage
 
       try {
-        await tokenLockup.cancelTimelock(recipientAccount.address, 1)
+        await tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 1, reserveAccount.address)
       } catch (e) {
         errorMessage = e.message
       }
