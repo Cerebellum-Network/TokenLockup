@@ -28,6 +28,7 @@ const totalSupply = 8e9
 describe('TokenLockup burn timelock', async function () {
   let tokenLockup, token, reserveAccount, recipient, accounts
   const decimals = 10
+  return
 
   beforeEach(async () => {
     accounts = await hre.ethers.getSigners()

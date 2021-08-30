@@ -359,7 +359,7 @@ describe('TokenLockup unlock scheduling', async function () {
       error = e.message
     }
 
-    expect(error).to.match(/revert first release > max/)
+    expect(error).to.match(/first release > max/)
   })
 
   it('can specify a schedule with a delay up to the max release delay', async () => {
