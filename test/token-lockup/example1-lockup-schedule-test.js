@@ -91,10 +91,10 @@ describe('test lockup periods for token release example', async function () {
     const recipient3 = accounts[5]
 
     // last argument is the schedule id
-    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(recipient0.address, fundingAmount, commence, 0)
-    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(recipient1.address, fundingAmount, commence, 1)
-    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(recipient2.address, fundingAmount, commence, 2)
-    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(recipient3.address, fundingAmount, commence, 3)
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(recipient0.address, fundingAmount, commence, 0, [])
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(recipient1.address, fundingAmount, commence, 1, [])
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(recipient2.address, fundingAmount, commence, 2, [])
+    await tokenLockup.connect(reserveAccount).fundReleaseSchedule(recipient3.address, fundingAmount, commence, 3, [])
 
     // RELEASE 1: check starting balances
     expect(await tokenLockup.balanceOf(recipient0.address)).to.equal(fundingAmount)

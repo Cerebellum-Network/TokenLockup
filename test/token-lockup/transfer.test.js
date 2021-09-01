@@ -84,7 +84,8 @@ describe('TokenLockup unlock scheduling', async function () {
       recipient.address,
       totalRecipientAmount,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await token.balanceOf(tokenLockup.address)).to.equal(100)
@@ -135,7 +136,8 @@ describe('TokenLockup unlock scheduling', async function () {
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
     expect(await tokenLockup.totalSupply()).to.equal('100')
 
@@ -143,7 +145,8 @@ describe('TokenLockup unlock scheduling', async function () {
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
     expect(await tokenLockup.totalSupply()).to.equal('200')
 
@@ -229,7 +232,8 @@ describe('TokenLockup unlock scheduling', async function () {
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
     expect(await tokenLockup.totalSupply()).to.equal('100')
 
@@ -237,7 +241,8 @@ describe('TokenLockup unlock scheduling', async function () {
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
     expect(await tokenLockup.totalSupply()).to.equal('200')
 

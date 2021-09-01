@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT
-import "./IERC20Burnable.sol";
 
 pragma solidity 0.8.3;
+
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 as IERC20Token } from "./IERC20.sol";
+
 /**
     @title A smart contract for unlocking tokens based on a release schedule
     @author By CoMakery, Inc., Upside, Republic
@@ -10,7 +13,9 @@ pragma solidity 0.8.3;
         The token must implement a burn function.
 */
 contract TokenLockup {
-    IERC20Burnable public token;
+    using SafeERC20 for IERC20Token;
+
+    IERC20Token public token;
     string private _name;
     string private _symbol;
 
@@ -26,7 +31,7 @@ contract TokenLockup {
         uint commencementTimestamp;
         uint tokensTransferred;
         uint totalAmount;
-        address cancelableBy; // not cancelable unless set at the time of funding
+        address[] cancelableBy; // not cancelable unless set at the time of funding
     }
 
     ReleaseSchedule[] public releaseSchedules;
@@ -49,7 +54,7 @@ contract TokenLockup {
         uint amount,
         uint commencementTimestamp,
         uint timelockId,
-        bool cancelable
+        address[] cancelableBy
     );
 
     event TimelockCanceled(
@@ -76,7 +81,7 @@ contract TokenLockup {
     ) {
         _name = name_;
         _symbol = symbol_;
-        token = IERC20Burnable(_token);
+        token = IERC20Token(_token);
 
         require(_minTimelockAmount > 0, "Min timelock amount > 0");
         minTimelockAmount = _minTimelockAmount;
@@ -97,16 +102,11 @@ contract TokenLockup {
         uint delayUntilFirstReleaseInSeconds,
         uint initialReleasePortionInBips,
         uint periodBetweenReleasesInSeconds
-    )
-    external
-    returns
-    (
-        uint unlockScheduleId
-    ) {
+    ) external returns (uint unlockScheduleId) {
         require(delayUntilFirstReleaseInSeconds <= maxReleaseDelay, "first release > max");
-
         require(releaseCount >= 1, "< 1 release");
         require(initialReleasePortionInBips <= BIPS_PRECISION, "release > 100%");
+
         if (releaseCount > 1) {
             require(periodBetweenReleasesInSeconds > 0, "period = 0");
         }
@@ -115,11 +115,11 @@ contract TokenLockup {
         }
 
         releaseSchedules.push(ReleaseSchedule(
-                releaseCount,
-                delayUntilFirstReleaseInSeconds,
-                initialReleasePortionInBips,
-                periodBetweenReleasesInSeconds
-            ));
+            releaseCount,
+            delayUntilFirstReleaseInSeconds,
+            initialReleasePortionInBips,
+            periodBetweenReleasesInSeconds
+        ));
 
         unlockScheduleId = releaseSchedules.length - 1;
         emit ScheduleCreated(msg.sender, unlockScheduleId);
@@ -128,48 +128,33 @@ contract TokenLockup {
     }
 
     /**
-        @notice Fund the programmatic release of tokens for a recipient.
-            WARNING: this is NOT CANCELABLE.
-            The tokens will be locked to everyone including the funder until the tokens are released to the recipient.
-        @param to Recipient address that will have tokens unlocked on a release schedule
-        @param amount The quantity of tokens to transfer in base units (the smallest unit without the decimal point)
-        @param commencementTimestamp Time the release schedule will start
-        @param scheduleId ID of the release schedule that will be used to release the tokens
-        @return success Always returns true on completion so that a function calling it can revert if the required call did not succeed
-    */
-    function fundReleaseSchedule(
-        address to,
-        uint amount,
-        uint commencementTimestamp, // unix timestamp
-        uint scheduleId
-    ) public returns (bool success) {
-        uint timelockId = _fund(to, amount, commencementTimestamp, scheduleId);
-        emit ScheduleFunded(msg.sender, to, scheduleId, amount, commencementTimestamp, timelockId, false);
-        return true;
-    }
-
-    /**
         @notice Fund the programmatic release of tokens to a recipient.
-            WARNING: this function IS CANCELABLE by the funder.
+            WARNING: this function IS CANCELABLE by cancelableBy.
             If canceled the tokens that are locked at the time of the cancellation will be returned to the funder
             and unlocked tokens will be transferred to the recipient.
         @param to recipient address that will have tokens unlocked on a release schedule
         @param amount of tokens to transfer in base units (the smallest unit without the decimal point)
         @param commencementTimestamp the time the release schedule will start
         @param scheduleId the id of the release schedule that will be used to release the tokens
+        @param cancelableBy array of canceler addresses
         @return success Always returns true on completion so that a function calling it can revert if the required call did not succeed
     */
-    function fundCancelableReleaseSchedule(
+    function fundReleaseSchedule(
         address to,
         uint amount,
         uint commencementTimestamp, // unix timestamp
-        uint scheduleId
+        uint scheduleId,
+        address[] memory cancelableBy
     ) public returns (bool success) {
+        require(cancelableBy.length <= 10, "max 10 cancelableBy addressees");
+
         uint timelockId = _fund(to, amount, commencementTimestamp, scheduleId);
 
-        timelocks[to][timelockId].cancelableBy = msg.sender;
+        if (cancelableBy.length > 0) {
+            timelocks[to][timelockId].cancelableBy = cancelableBy;
+        }
 
-        emit ScheduleFunded(msg.sender, to, scheduleId, amount, commencementTimestamp, timelockId, true);
+        emit ScheduleFunded(msg.sender, to, scheduleId, amount, commencementTimestamp, timelockId, cancelableBy);
         return true;
     }
 
@@ -184,7 +169,7 @@ contract TokenLockup {
         require(scheduleId < releaseSchedules.length, "bad scheduleId");
         require(amount >= releaseSchedules[scheduleId].releaseCount, "< 1 token per release");
         // It will revert via ERC20 implementation if there's no allowance
-        require(token.transferFrom(msg.sender, address(this), amount));
+        token.safeTransferFrom(msg.sender, address(this), amount);
         require(
             commencementTimestamp <= block.timestamp + maxReleaseDelay
         , "commencement time out of range");
@@ -204,47 +189,80 @@ contract TokenLockup {
     }
 
     /**
-        @notice Cancel a cancelable timelock created by the fundCancelableReleaseSchedule function.
+        @notice Cancel a cancelable timelock created by the fundReleaseSchedule function.
             WARNING: this function cannot cancel a release schedule created by fundReleaseSchedule
             If canceled the tokens that are locked at the time of the cancellation will be returned to the funder
             and unlocked tokens will be transferred to the recipient.
         @param target The address that would receive the tokens when released from the timelock.
         @return success Always returns true on completion so that a function calling it can revert if the required call did not succeed
     */
-    function cancelTimelock(address target, uint timelockIndex) public returns (bool success) {
+    function cancelTimelock(
+        address target,
+        uint timelockIndex,
+        address reclaimTokenTo
+    ) public returns (bool success) {
         require(timelockCountOf(target) > timelockIndex, "invalid timelock");
-        require(timelocks[target][timelockIndex].cancelableBy != address(0), "uncancelable timelock");
-        require(msg.sender == timelocks[target][timelockIndex].cancelableBy, "only funder can cancel");
+        require(reclaimTokenTo != address(0), "Invalid reclaimTokenTo");
+
+        Timelock storage timelock = timelocks[target][timelockIndex];
+
+        require(_canBeCanceled(timelock), "You are not allowed to cancel this timelock");
 
         uint canceledAmount = lockedBalanceOfTimelock(target, timelockIndex);
+
+        require(canceledAmount > 0, "Timelock has no value left");
+
         uint paidAmount = unlockedBalanceOfTimelock(target, timelockIndex);
 
-        token.transfer(msg.sender, canceledAmount);
-        token.transfer(target, paidAmount);
+        token.safeTransfer(reclaimTokenTo, canceledAmount);
+        token.safeTransfer(target, paidAmount);
 
         emit TimelockCanceled(msg.sender, target, timelockIndex, canceledAmount, paidAmount);
 
-        _deleteTimelock(target, timelockIndex);
+        timelock.tokensTransferred = timelock.totalAmount;
         return true;
     }
+
     /**
-        @notice Fund many release schedules in a single call to reduce gas fees. All params are arrays of values where
-            each index location should have the params for a single fundReleaseSchedule function call.
-        @param recipients An array of recipient addresses
-        @param amounts An array of amounts to fund
-        @param commencementTimestamps An array of commencement timestamps
-        @param scheduleIds An array of schedule ids
-        @return success Always returns true on completion so that a function calling it can revert if the required call did not succeed
-    */
+     *  @notice Check if timelock can be cancelable by msg.sender
+     */
+    function _canBeCanceled(Timelock storage timelock) view private returns (bool){
+        for (uint i = 0; i < timelock.cancelableBy.length; i++) {
+            if (msg.sender == timelock.cancelableBy[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     *  @notice Batch version of fund cancelable release schedule
+     *  @param to An array of recipient address that will have tokens unlocked on a release schedule
+     *  @param amounts An array of amount of tokens to transfer in base units (the smallest unit without the decimal point)
+     *  @param commencementTimestamps An array of the time the release schedule will start
+     *  @param scheduleIds An array of the id of the release schedule that will be used to release the tokens
+     *  @param cancelableBy An array of cancelables
+     *  @return success Always returns true on completion so that a function calling it can revert if the required call did not succeed
+     */
     function batchFundReleaseSchedule(
-        address[] memory recipients,
+        address[] memory to,
         uint[] memory amounts,
-        uint[] memory commencementTimestamps, // unix timestamp
-        uint[] memory scheduleIds
+        uint[] memory commencementTimestamps,
+        uint[] memory scheduleIds,
+        address[] memory cancelableBy
     ) external returns (bool success) {
-        require(amounts.length == recipients.length, "mismatched array length");
-        for (uint i; i < recipients.length; i++) {
-            require(fundReleaseSchedule(recipients[i], amounts[i], commencementTimestamps[i], scheduleIds[i]));
+        require(to.length == amounts.length, "mismatched array length");
+        require(to.length == commencementTimestamps.length, "mismatched array length");
+        require(to.length == scheduleIds.length, "mismatched array length");
+
+        for (uint i = 0; i < to.length; i++) {
+            require(fundReleaseSchedule(
+                to[i],
+                amounts[i],
+                commencementTimestamps[i],
+                scheduleIds[i],
+                cancelableBy
+            ));
         }
 
         return true;
@@ -280,7 +298,12 @@ contract TokenLockup {
         @return locked Balance of the timelock
     */
     function lockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint locked) {
-        return timelockOf(who, timelockIndex).totalAmount - totalUnlockedToDateOfTimelock(who, timelockIndex);
+        Timelock memory timelock = timelockOf(who, timelockIndex);
+        if (timelock.totalAmount <= timelock.tokensTransferred) {
+            return 0;
+        } else {
+            return timelock.totalAmount - totalUnlockedToDateOfTimelock(who, timelockIndex);
+        }
     }
 
     /**
@@ -290,7 +313,12 @@ contract TokenLockup {
         @return unlocked balance of the timelock
     */
     function unlockedBalanceOfTimelock(address who, uint timelockIndex) public view returns (uint unlocked) {
-        return totalUnlockedToDateOfTimelock(who, timelockIndex) - timelockOf(who, timelockIndex).tokensTransferred;
+        Timelock memory timelock = timelockOf(who, timelockIndex);
+        if (timelock.totalAmount <= timelock.tokensTransferred) {
+            return 0;
+        } else {
+            return totalUnlockedToDateOfTimelock(who, timelockIndex) - timelock.tokensTransferred;
+        }
     }
 
     /**
@@ -419,46 +447,6 @@ contract TokenLockup {
         return token.balanceOf(address(this));
     }
 
-    /**
-        @notice Burns a specific timelock belonging to the function caller's address
-            WARNING: this function should be used only defensively to avoid spam. It will burn tokens in a timelock and the
-            token's will never be recoverable by anyone.
-            This is intended to be used to delete spam timelocks that the recipient does not want.
-            This burns the tokens in the timelock and removes them from the token's totalSupply.
-            It also deletes the timelock from the recipients timelocks and reduces the cost of calculating the transfer function.
-        @param timelockIndex the timelock index belonging to the function caller to delete
-        @param confirmationIdPlusOne the timelockIndex + 1 used for confirmation and as a security check
-        @return bool returns true when completed
-    */
-    function burn(uint timelockIndex, uint confirmationIdPlusOne) external returns (bool) {
-        require(timelockIndex < timelockCountOf(msg.sender), "No schedule");
-
-        // this also protects from overflow below
-        require(confirmationIdPlusOne == timelockIndex + 1, "Burn not confirmed");
-
-        // actually burning the remaining tokens from the unlock
-        token.burn(lockedBalanceOfTimelock(msg.sender, timelockIndex) + unlockedBalanceOfTimelock(msg.sender, timelockIndex));
-
-        _deleteTimelock(msg.sender, timelockIndex);
-
-        emit TimelockBurned(msg.sender, timelockIndex);
-        return true;
-    }
-
-    function _deleteTimelock(address targetAddress, uint deletedTimelockIndex) internal returns (bool) {
-        uint indexOfLastTimelock = timelockCountOf(targetAddress) - 1;
-
-        // overwrite the timelock to delete with the timelock on the end which will be discarded
-        // if the timelock to delete is on the end, it will just be deleted in the step after the if statement
-        if (indexOfLastTimelock != deletedTimelockIndex) {
-            timelocks[targetAddress][deletedTimelockIndex] = timelocks[targetAddress][indexOfLastTimelock];
-        }
-
-        // delete the duplicate timelock on the end
-        timelocks[targetAddress].pop();
-        return true;
-    }
-
     function _transfer(address from, address to, uint value) internal returns (bool) {
         require(unlockedBalanceOf(from) >= value, "amount > unlocked");
 
@@ -485,7 +473,7 @@ contract TokenLockup {
         // should never have a remainingTransfer amount at this point
         require(remainingTransfer == 0, "bad transfer");
 
-        require(token.transfer(to, value));
+        token.safeTransfer(to, value);
         return true;
     }
 
@@ -501,7 +489,7 @@ contract TokenLockup {
     function transferTimelock(address to, uint value, uint timelockId) public returns (bool) {
         require(unlockedBalanceOfTimelock(msg.sender, timelockId) >= value, "amount > unlocked");
         timelocks[msg.sender][timelockId].tokensTransferred += value;
-        require(token.transfer(to, value));
+        token.safeTransfer(to, value);
         return true;
     }
 

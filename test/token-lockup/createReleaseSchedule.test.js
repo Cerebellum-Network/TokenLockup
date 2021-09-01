@@ -54,9 +54,9 @@ describe('TokenLockup create release schedule', async function () {
       .withArgs(reserveAccount.address, 0)
     expect(await tokenLockup.scheduleCount()).to.equal(1)
 
-    await tokenLockup.fundReleaseSchedule(accounts[1].address, 10000, 0, 0)
+    await tokenLockup.fundReleaseSchedule(accounts[1].address, 10000, 0, 0, [])
     const timelock = await tokenLockup.timelockOf(accounts[1].address, 0)
-    expect(timelock.cancelableBy).to.equal('0x0000000000000000000000000000000000000000')
+    expect(timelock.cancelableBy.length).to.equal(0)
   })
 
   it('funder cannot cancel a non existent timelock', async () => {
@@ -64,16 +64,16 @@ describe('TokenLockup create release schedule', async function () {
       .to.emit(tokenLockup, 'ScheduleCreated')
       .withArgs(reserveAccount.address, 0)
     expect(await tokenLockup.scheduleCount()).to.equal(1)
-    await tokenLockup.fundReleaseSchedule(accounts[1].address, 10000, 0, 0)
+    await tokenLockup.fundReleaseSchedule(accounts[1].address, 10000, 0, 0, [])
 
     let errorMessage
     try {
-      await tokenLockup.connect(reserveAccount).cancelTimelock(accounts[1].address, 0)
+      await tokenLockup.connect(reserveAccount).cancelTimelock(accounts[1].address, 0, accounts[0].address)
     } catch (e) {
       errorMessage = e.message
     }
 
-    expect(errorMessage).to.match(/uncancelable timelock/)
+    expect(errorMessage).to.match(/You are not allowed to cancel this timelock/)
   })
 
   it('emits a CreateSchedule event', async () => {
@@ -90,7 +90,7 @@ describe('TokenLockup create release schedule', async function () {
       error = e
     }
 
-    expect(error.message).to.match(/revert < 1 release/)
+    expect(error.message).to.match(/< 1 release/)
   })
 
   it('if there is one release it must release all tokens', async function () {

@@ -66,7 +66,8 @@ describe('TokenLockup unlock scheduling', async function () {
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
   })
 

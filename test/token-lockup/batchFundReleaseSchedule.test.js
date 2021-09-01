@@ -60,7 +60,8 @@ describe('BatchTransfer fund release schedule', function () {
       [accounts[1].address, accounts[2].address, accounts[3].address],
       [1000, 2000, 3000],
       [commence, commence, commence],
-      [0, 0, 0])
+      [0, 0, 0],
+      [])
 
     expect(await tokenLockup.balanceOf(accounts[1].address)).to.equal(1000)
     expect(await tokenLockup.unlockedBalanceOf(accounts[1].address)).to.equal(500)
@@ -82,7 +83,8 @@ describe('BatchTransfer fund release schedule', function () {
         [accounts[1].address, accounts[3].address],
         [1000, 2000, 3000],
         [commence, commence, commence],
-        [0, 0, 0])
+        [0, 0, 0],
+        [])
     } catch (e) {
       errorMessage = e.message
     }
@@ -98,7 +100,8 @@ describe('BatchTransfer fund release schedule', function () {
         [accounts[1].address, accounts[3].address],
         [1000, 2000, 3000],
         [commence, commence, commence],
-        [0, 0, 0])
+        [0, 0, 0],
+        [])
     } catch (e) {
       errorMessage = e.message
     }
@@ -114,7 +117,8 @@ describe('BatchTransfer fund release schedule', function () {
         [accounts[1].address, '0x0000000000000000000000000000000000000000', accounts[3].address],
         [1000, 2000, 3000],
         [commence, commence, commence],
-        [0, 0, 0])
+        [0, 0, 0],
+        [])
     } catch (e) {
       errorMessage = e.message
     }
@@ -130,7 +134,8 @@ describe('BatchTransfer fund release schedule', function () {
         [accounts[1].address, accounts[2].address, accounts[3].address],
         [1000, 2000, 3001],
         [commence, commence, commence],
-        [0, 0, 0])
+        [0, 0, 0],
+        [])
     } catch (e) {
       errorMessage = e.message
     }
@@ -158,7 +163,8 @@ describe('BatchTransfer fund release schedule', function () {
       recipients,
       amounts,
       commencements,
-      delays)
+      delays,
+      [])
 
     expect(await tokenLockup.balanceOf(accounts[1].address)).to.equal(50000)
     expect(await tokenLockup.unlockedBalanceOf(accounts[1].address)).to.equal(25000)

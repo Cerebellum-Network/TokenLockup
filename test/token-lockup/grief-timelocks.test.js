@@ -76,7 +76,8 @@ describe('TokenLockup griefer resilience', async function () {
       recipient.address,
       1000,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     const fundings = []
@@ -86,7 +87,8 @@ describe('TokenLockup griefer resilience', async function () {
           recipient.address,
           1000,
           (commence + days(1000)),
-          0 // scheduleId
+          0, // scheduleId
+          []
         )
       )
     }
@@ -108,7 +110,8 @@ describe('TokenLockup griefer resilience', async function () {
       recipient.address,
       1000,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     const fundings = []
@@ -118,7 +121,8 @@ describe('TokenLockup griefer resilience', async function () {
           recipient.address,
           100e3,
           commence,
-          1 // scheduleId
+          1, // scheduleId
+          []
         )
       )
     }

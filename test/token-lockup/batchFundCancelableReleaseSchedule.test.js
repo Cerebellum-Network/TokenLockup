@@ -68,13 +68,15 @@ describe('TokenLockup calculate unlocked', async function () {
     const commenced = await currentTimestamp()
     const canceler = accounts[2]
 
-    await expect(tokenLockup.fundReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId, [canceler.address]))
+    await expect(tokenLockup.batchFundReleaseSchedule([recipientAccount.address], [amount], [], [scheduledId], [canceler.address]))
+      .to.revertedWith('mismatched array length')
+    await expect(tokenLockup.batchFundReleaseSchedule([recipientAccount.address], [amount], [commenced], [scheduledId], [canceler.address]))
       .to.emit(tokenLockup, 'ScheduleFunded')
-      .withArgs(reserveAccount.address, recipientAccount.address, scheduledId, amount, commenced, 0, [canceler.address])
+      .withArgs(reserveAccount.address, recipientAccount.address, scheduledId, amount, commenced, 0, [])
 
-    await expect(tokenLockup.fundReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId, [canceler.address]))
+    await expect(tokenLockup.batchFundReleaseSchedule([recipientAccount.address], [amount], [commenced], [scheduledId], [canceler.address]))
       .to.emit(tokenLockup, 'ScheduleFunded')
-      .withArgs(reserveAccount.address, recipientAccount.address, scheduledId, amount, commenced, 1, [canceler.address])
+      .withArgs(reserveAccount.address, recipientAccount.address, scheduledId, amount, commenced, 1, [])
 
     expect(await tokenLockup.timelockCountOf(recipientAccount.address)).to.equal(2)
     await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0, accounts[1].address))
@@ -102,97 +104,6 @@ describe('TokenLockup calculate unlocked', async function () {
       )
   })
 
-  describe('Check cancel timelock after funding with multi cancelable addresses', async () => {
-    const cancelerList = []
-
-    beforeEach(async () => {
-      cancelerList.push(accounts[0])
-      cancelerList.push(accounts[1])
-      cancelerList.push(accounts[2])
-
-      const tx = await tokenLockup.connect(reserveAccount).createReleaseSchedule(
-        2, // totalBatches
-        days(30), // firstDelay
-        5000, // firstBatchBips
-        days(30) // batchDelay
-      )
-
-      const scheduledId = tx.value.toString()
-      const amount = 50
-      await token.approve(tokenLockup.address, amount * 2)
-      const commenced = await currentTimestamp()
-
-      await expect(tokenLockup.fundReleaseSchedule(
-        recipientAccount.address,
-        amount,
-        commenced,
-        scheduledId,
-        [cancelerList[0].address, cancelerList[1].address, cancelerList[2].address]))
-    })
-
-    it('cancel with first canceler', async () => {
-      await expect(tokenLockup.connect(cancelerList[0]).cancelTimelock(recipientAccount.address, 0, cancelerList[0].address))
-        .to.emit(tokenLockup, 'TimelockCanceled')
-        .withArgs(
-          cancelerList[0].address, // canceledBy
-          recipientAccount.address, // target
-          0, // timelock
-          50, // canceledAmount
-          0 // paidAmount
-        )
-    })
-
-    it('cancel with second canceler', async () => {
-      await expect(tokenLockup.connect(cancelerList[1]).cancelTimelock(recipientAccount.address, 0, cancelerList[0].address))
-        .to.emit(tokenLockup, 'TimelockCanceled')
-        .withArgs(
-          cancelerList[1].address, // canceledBy
-          recipientAccount.address, // target
-          0, // timelock
-          50, // canceledAmount
-          0 // paidAmount
-        )
-    })
-
-    it('cancel with third canceler', async () => {
-      await expect(tokenLockup.connect(cancelerList[2]).cancelTimelock(recipientAccount.address, 0, cancelerList[0].address))
-        .to.emit(tokenLockup, 'TimelockCanceled')
-        .withArgs(
-          cancelerList[2].address, // canceledBy
-          recipientAccount.address, // target
-          0, // timelock
-          50, // canceledAmount
-          0 // paidAmount
-        )
-    })
-
-    it('cancel with non canceler reverts', async () => {
-      await expect(tokenLockup.connect(accounts[3]).cancelTimelock(recipientAccount.address, 0, cancelerList[0].address))
-        .to.revertedWith('You are not allowed to cancel this timelock')
-    })
-
-    it('cancel with empty reclaimTokenTo reverts', async () => {
-      await expect(tokenLockup.connect(cancelerList[0]).cancelTimelock(recipientAccount.address, 0, '0x0000000000000000000000000000000000000000'))
-        .to.revertedWith('Invalid reclaimTokenTo')
-    })
-
-    it('timelock index not change after canceling', async () => {
-      const [scheduleId, commencement, , totalAmount] = await tokenLockup.connect(recipientAccount).timelockOf(recipientAccount.address, 0)
-      const timelockCount = await tokenLockup.connect(accounts[0]).timelockCountOf(recipientAccount.address)
-
-      await tokenLockup.connect(accounts[0]).cancelTimelock(recipientAccount.address, 0, accounts[0].address)
-
-      // check total timelock count after cancel
-      expect(await tokenLockup.connect(accounts[0]).timelockCountOf(recipientAccount.address)).to.equal(timelockCount)
-
-      // check total timelock index has not been changed
-      const [canceledScheduleId, canceledCommencement, , canceledTotalAmount] = await tokenLockup.connect(recipientAccount).timelockOf(recipientAccount.address, 0)
-      expect(canceledScheduleId).to.equal(scheduleId)
-      expect(canceledCommencement).to.equal(commencement)
-      expect(canceledTotalAmount).to.equal(totalAmount)
-    })
-  })
-
   describe('simple 1 month delay then 50% for 2 monthly releases', async () => {
     let scheduledId, commenced, amount
 
@@ -208,7 +119,7 @@ describe('TokenLockup calculate unlocked', async function () {
       amount = 100
       await token.approve(tokenLockup.address, amount)
       commenced = await currentTimestamp()
-      await tokenLockup.fundReleaseSchedule(recipientAccount.address, amount, commenced, scheduledId, [reserveAccount.address])
+      await tokenLockup.batchFundReleaseSchedule([recipientAccount.address], [amount], [commenced], [scheduledId], [reserveAccount.address])
     })
 
     it('should be able to check if the lockup is cancelable', async () => {
