@@ -86,14 +86,16 @@ describe('TokenLockup release schedule of', async function () {
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       200,
       commence,
-      1 // scheduleId
+      1, // scheduleId
+      []
     )
 
     await advanceTime(1)

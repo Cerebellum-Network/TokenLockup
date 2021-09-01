@@ -54,7 +54,7 @@ describe('TokenLockup create release schedule', async function () {
       .withArgs(reserveAccount.address, 0)
     expect(await tokenLockup.scheduleCount()).to.equal(1)
 
-    await tokenLockup.fundReleaseSchedule(accounts[1].address, 10000, 0, 0)
+    await tokenLockup.fundReleaseSchedule(accounts[1].address, 10000, 0, 0, [])
     const timelock = await tokenLockup.timelockOf(accounts[1].address, 0)
     expect(timelock.cancelableBy.length).to.equal(0)
   })
@@ -64,7 +64,7 @@ describe('TokenLockup create release schedule', async function () {
       .to.emit(tokenLockup, 'ScheduleCreated')
       .withArgs(reserveAccount.address, 0)
     expect(await tokenLockup.scheduleCount()).to.equal(1)
-    await tokenLockup.fundReleaseSchedule(accounts[1].address, 10000, 0, 0)
+    await tokenLockup.fundReleaseSchedule(accounts[1].address, 10000, 0, 0, [])
 
     let errorMessage
     try {
