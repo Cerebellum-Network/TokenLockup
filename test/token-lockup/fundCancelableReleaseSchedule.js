@@ -102,46 +102,7 @@ describe('TokenLockup calculate unlocked', async function () {
       )
   })
 
-  describe('timelock index not change after canceling', async () => {
-    beforeEach(async () => {
-      const tx = await tokenLockup.connect(reserveAccount).createReleaseSchedule(
-        2, // totalBatches
-        days(30), // firstDelay
-        5000, // firstBatchBips
-        days(30) // batchDelay
-      )
-  
-      const scheduledId = tx.value.toString()
-      const amount = 50
-      await token.approve(tokenLockup.address, amount * 2)
-      const commenced = await currentTimestamp()
-  
-      await expect(tokenLockup.fundReleaseSchedule(
-        recipientAccount.address,
-        amount,
-        commenced,
-        scheduledId,
-        [accounts[0].address]))
-    })
-
-    it('works', async () => {
-      const [scheduleId, commencement, , totalAmount] = await tokenLockup.connect(recipientAccount).timelockOf(recipientAccount.address, 0)
-      const timelockCount = await tokenLockup.connect(accounts[0]).timelockCountOf(recipientAccount.address)
-
-      await tokenLockup.connect(accounts[0]).cancelTimelock(recipientAccount.address, 0, accounts[0].address)
-
-      // check total timelock count after cancel
-      expect(await tokenLockup.connect(accounts[0]).timelockCountOf(recipientAccount.address)).to.equal(timelockCount)
-
-      // check total timelock index has not been changed
-      const [canceledScheduleId, canceledCommencement, , canceledTotalAmount] = await tokenLockup.connect(recipientAccount).timelockOf(recipientAccount.address, 0)
-      expect(canceledScheduleId).to.equal(scheduleId)
-      expect(canceledCommencement).to.equal(commencement)
-      expect(canceledTotalAmount).to.equal(totalAmount)
-    })
-  })
-
-  describe('fund with multi cancelable addresses and cancel with them', async () => {
+  describe('Check cancel timelock after funding with multi cancelable addresses', async () => {
     const cancelerList = []
   
     beforeEach(async () => {
@@ -208,6 +169,27 @@ describe('TokenLockup calculate unlocked', async function () {
     it('cancel with non canceler reverts', async () => {
       await expect(tokenLockup.connect(accounts[3]).cancelTimelock(recipientAccount.address, 0, cancelerList[0].address))
         .to.revertedWith('You are not allowed to cancel this timelock')
+    })
+    
+    it('cancel with empty reclaimTokenTo reverts', async () => {
+      await expect(tokenLockup.connect(cancelerList[0]).cancelTimelock(recipientAccount.address, 0, '0x0000000000000000000000000000000000000000'))
+        .to.revertedWith('Invalid reclaimTokenTo')
+    })
+
+    it('timelock index not change after canceling', async () => {
+      const [scheduleId, commencement, , totalAmount] = await tokenLockup.connect(recipientAccount).timelockOf(recipientAccount.address, 0)
+      const timelockCount = await tokenLockup.connect(accounts[0]).timelockCountOf(recipientAccount.address)
+
+      await tokenLockup.connect(accounts[0]).cancelTimelock(recipientAccount.address, 0, accounts[0].address)
+
+      // check total timelock count after cancel
+      expect(await tokenLockup.connect(accounts[0]).timelockCountOf(recipientAccount.address)).to.equal(timelockCount)
+
+      // check total timelock index has not been changed
+      const [canceledScheduleId, canceledCommencement, , canceledTotalAmount] = await tokenLockup.connect(recipientAccount).timelockOf(recipientAccount.address, 0)
+      expect(canceledScheduleId).to.equal(scheduleId)
+      expect(canceledCommencement).to.equal(commencement)
+      expect(canceledTotalAmount).to.equal(totalAmount)
     })
   })
 
