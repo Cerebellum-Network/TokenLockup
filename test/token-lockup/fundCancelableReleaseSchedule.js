@@ -104,7 +104,7 @@ describe('TokenLockup calculate unlocked', async function () {
 
   describe('Check cancel timelock after funding with multi cancelable addresses', async () => {
     const cancelerList = []
-  
+
     beforeEach(async () => {
       cancelerList.push(accounts[0])
       cancelerList.push(accounts[1])
@@ -116,12 +116,12 @@ describe('TokenLockup calculate unlocked', async function () {
         5000, // firstBatchBips
         days(30) // batchDelay
       )
-  
+
       const scheduledId = tx.value.toString()
       const amount = 50
       await token.approve(tokenLockup.address, amount * 2)
       const commenced = await currentTimestamp()
-  
+
       await expect(tokenLockup.fundReleaseSchedule(
         recipientAccount.address,
         amount,
@@ -170,7 +170,7 @@ describe('TokenLockup calculate unlocked', async function () {
       await expect(tokenLockup.connect(accounts[3]).cancelTimelock(recipientAccount.address, 0, cancelerList[0].address))
         .to.revertedWith('You are not allowed to cancel this timelock')
     })
-    
+
     it('cancel with empty reclaimTokenTo reverts', async () => {
       await expect(tokenLockup.connect(cancelerList[0]).cancelTimelock(recipientAccount.address, 0, '0x0000000000000000000000000000000000000000'))
         .to.revertedWith('Invalid reclaimTokenTo')
