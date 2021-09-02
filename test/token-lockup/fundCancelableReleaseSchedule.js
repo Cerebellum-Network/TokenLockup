@@ -258,7 +258,6 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(50)
       expect(await tokenLockup.balanceOfTimelock(recipientAccount.address, 0)).to.equal(100)
 
-
       await expect(tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 0, reserveAccount.address))
         .to.emit(tokenLockup, 'TimelockCanceled')
         .withArgs(
