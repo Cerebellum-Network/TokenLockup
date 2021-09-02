@@ -25,13 +25,8 @@ describe('TokenLockup get timelock info', async function () {
       [accounts[0].address],
       [totalSupply]
     )
-    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
-    const scheduleCalc = await ScheduleCalc.deploy()
-    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
-      libraries: {
-        ScheduleCalc: scheduleCalc.address
-      }
-    })
+
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
     tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
@@ -66,14 +61,16 @@ describe('TokenLockup get timelock info', async function () {
       recipient.address,
       490,
       startingTime,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       510,
       startingTime + 1,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await tokenLockup.timelockCountOf(recipient.address)).to.equal(2)
@@ -114,14 +111,16 @@ describe('TokenLockup get timelock info', async function () {
       recipient.address,
       490,
       (await hre.ethers.provider.getBlock()).timestamp,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       510,
       (await hre.ethers.provider.getBlock()).timestamp,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     let errorMessage

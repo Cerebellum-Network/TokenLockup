@@ -5,12 +5,12 @@ const { solidity } = require('ethereum-waffle')
 chai.use(solidity)
 
 describe('TokenLockup create release schedule', async function () {
-  let tokenLockup, token, reserveAccount
+  let tokenLockup, token, reserveAccount, accounts
   const decimals = 10
   const totalSupply = 8e9
 
   beforeEach(async () => {
-    const accounts = await hre.ethers.getSigners()
+    accounts = await hre.ethers.getSigners()
 
     reserveAccount = accounts[0]
 
@@ -24,13 +24,8 @@ describe('TokenLockup create release schedule', async function () {
       [accounts[0].address],
       [totalSupply]
     )
-    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
-    const scheduleCalc = await ScheduleCalc.deploy()
-    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
-      libraries: {
-        ScheduleCalc: scheduleCalc.address
-      }
-    })
+
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
     tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
@@ -38,13 +33,47 @@ describe('TokenLockup create release schedule', async function () {
       1e4,
       346896000
     )
+    await token.approve(tokenLockup.address, totalSupply)
   })
 
   it('increments the schedulerCount', async function () {
-    await tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1)
+    await expect(tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1))
+      .to.emit(tokenLockup, 'ScheduleCreated')
+      .withArgs(reserveAccount.address, 0)
     expect(await tokenLockup.scheduleCount()).to.equal(1)
-    await tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1)
+
+    await expect(tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1))
+      .to.emit(tokenLockup, 'ScheduleCreated')
+      .withArgs(reserveAccount.address, 1)
     expect(await tokenLockup.scheduleCount()).to.equal(2)
+  })
+
+  it('should be able to check if the lockup is cancelable', async () => {
+    await expect(tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1))
+      .to.emit(tokenLockup, 'ScheduleCreated')
+      .withArgs(reserveAccount.address, 0)
+    expect(await tokenLockup.scheduleCount()).to.equal(1)
+
+    await tokenLockup.fundReleaseSchedule(accounts[1].address, 10000, 0, 0, [])
+    const timelock = await tokenLockup.timelockOf(accounts[1].address, 0)
+    expect(timelock.cancelableBy.length).to.equal(0)
+  })
+
+  it('funder cannot cancel a non existent timelock', async () => {
+    await expect(tokenLockup.connect(reserveAccount).createReleaseSchedule(2, 0, 1, 1))
+      .to.emit(tokenLockup, 'ScheduleCreated')
+      .withArgs(reserveAccount.address, 0)
+    expect(await tokenLockup.scheduleCount()).to.equal(1)
+    await tokenLockup.fundReleaseSchedule(accounts[1].address, 10000, 0, 0, [])
+
+    let errorMessage
+    try {
+      await tokenLockup.connect(reserveAccount).cancelTimelock(accounts[1].address, 0, accounts[0].address)
+    } catch (e) {
+      errorMessage = e.message
+    }
+
+    expect(errorMessage).to.match(/You are not allowed to cancel this timelock/)
   })
 
   it('emits a CreateSchedule event', async () => {
@@ -61,7 +90,7 @@ describe('TokenLockup create release schedule', async function () {
       error = e
     }
 
-    expect(error.message).to.match(/revert < 1 release/)
+    expect(error.message).to.match(/< 1 release/)
   })
 
   it('if there is one release it must release all tokens', async function () {

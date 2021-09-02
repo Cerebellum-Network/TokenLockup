@@ -33,13 +33,8 @@ describe('TokenLockup unlock scheduling', async function () {
       [accounts[0].address],
       [totalSupply]
     )
-    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
-    const scheduleCalc = await ScheduleCalc.deploy()
-    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
-      libraries: {
-        ScheduleCalc: scheduleCalc.address
-      }
-    })
+
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
 
     tokenLockup = await TokenLockup.deploy(
       token.address,
@@ -71,7 +66,8 @@ describe('TokenLockup unlock scheduling', async function () {
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
   })
 

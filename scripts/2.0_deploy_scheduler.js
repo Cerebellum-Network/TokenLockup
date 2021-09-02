@@ -39,19 +39,8 @@ async function main () {
   ]
   console.log(TokenLockupArgs)
 
-  const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
-  const scheduleCalc = await ScheduleCalc.deploy()
-  console.log('Deployed scheduleCalc at: ', scheduleCalc.address)
-
-  await scheduleCalc.deployTransaction.wait(1)
-  console.log('1 scheduleCalc confirmations completed')
-
   console.log('deploying token lockup')
-  const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
-    libraries: {
-      ScheduleCalc: scheduleCalc.address
-    }
-  })
+  const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
 
   const tokenLockup = await TokenLockup.deploy(
     ...TokenLockupArgs,
@@ -68,11 +57,6 @@ async function main () {
 
   const updatedContent = Object.assign(deploymentParamsLogContent, {
     [hre.network.name.toString()]: {
-      scheduleCalc: {
-        args: [],
-        transaction: scheduleCalc.deployTransaction.hash,
-        address: scheduleCalc.address
-      },
       tokenLockup: {
         args: TokenLockupArgs,
         transaction: tokenLockup.deployTransaction.hash,
@@ -86,17 +70,8 @@ async function main () {
     JSON.stringify(updatedContent)
   )
 
-  // upload the contracts Etherscan for verification
-  // await hre.run('verify:verify', {
-  //   address: tokenLockup.address,
-  //   constructorArguments: TokenLockupArgs
-  // })
-  //
-  // await hre.run('verify:verify', {
-  //   address: scheduleCalc.address
-  // })
   console.log('done!')
-  console.log('now run scripts to upload contract definitions for ScheduleCalc & TokenLockup contracts to Ethersacn')
+  console.log('now run scripts to upload contract definitions for TokenLockup contracts to Ethersacn')
 }
 
 // We recommend this pattern to be able to use async/await everywhere

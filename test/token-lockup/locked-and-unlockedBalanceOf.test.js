@@ -47,13 +47,8 @@ describe('TokenLockup timelock balances', async function () {
       [accounts[0].address],
       [totalSupply]
     )
-    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
-    const scheduleCalc = await ScheduleCalc.deploy()
-    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
-      libraries: {
-        ScheduleCalc: scheduleCalc.address
-      }
-    })
+
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
     tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
@@ -88,7 +83,8 @@ describe('TokenLockup timelock balances', async function () {
       recipient.address,
       totalRecipientAmount,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
@@ -155,14 +151,16 @@ describe('TokenLockup timelock balances', async function () {
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       200,
       commence,
-      1 // scheduleId
+      1, // scheduleId
+      []
     )
 
     await advanceTime(1)
@@ -210,7 +208,8 @@ describe('TokenLockup timelock balances', async function () {
       recipient.address,
       totalRecipientAmount,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
@@ -226,7 +225,8 @@ describe('TokenLockup timelock balances', async function () {
       recipient.address,
       totalRecipientAmount,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
@@ -275,7 +275,8 @@ describe('TokenLockup timelock balances', async function () {
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
     expect(await tokenLockup.totalSupply()).to.equal('100')
 
@@ -289,7 +290,8 @@ describe('TokenLockup timelock balances', async function () {
       recipient.address,
       100,
       commence,
-      1 // scheduleId
+      1, // scheduleId
+      []
     )
     expect(await tokenLockup.totalSupply()).to.equal('200')
 
@@ -338,7 +340,8 @@ describe('TokenLockup timelock balances', async function () {
       recipient.address,
       totalRecipientAmount,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
@@ -354,7 +357,8 @@ describe('TokenLockup timelock balances', async function () {
       recipient.address,
       totalRecipientAmount,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))

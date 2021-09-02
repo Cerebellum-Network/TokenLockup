@@ -33,13 +33,8 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
       [accounts[0].address],
       [totalSupply]
     )
-    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
-    const scheduleCalc = await ScheduleCalc.deploy()
-    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
-      libraries: {
-        ScheduleCalc: scheduleCalc.address
-      }
-    })
+
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
     tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
@@ -69,7 +64,8 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await token.balanceOf(tokenLockup.address)).to.equal(100)
@@ -103,7 +99,8 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await tokenLockup.connect(recipient)
@@ -120,7 +117,8 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await token.balanceOf(tokenLockup.address)).to.equal(100)
@@ -177,14 +175,16 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       50,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await token.balanceOf(tokenLockup.address)).to.equal(150)
@@ -238,14 +238,16 @@ describe('TokenLockup unlock scheduling for a specific timelock', async function
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       50,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await token.balanceOf(tokenLockup.address)).to.equal(150)

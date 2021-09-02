@@ -44,13 +44,8 @@ describe('TokenLockup release schedule of', async function () {
       [accounts[0].address],
       [totalSupply]
     )
-    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
-    const scheduleCalc = await ScheduleCalc.deploy()
-    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
-      libraries: {
-        ScheduleCalc: scheduleCalc.address
-      }
-    })
+
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
     tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
@@ -91,14 +86,16 @@ describe('TokenLockup release schedule of', async function () {
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       200,
       commence,
-      1 // scheduleId
+      1, // scheduleId
+      []
     )
 
     await advanceTime(1)
@@ -112,13 +109,13 @@ describe('TokenLockup release schedule of', async function () {
     expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('300')
 
-    const schedule1 = await tokenLockup.viewTimelock(recipient.address, 0)
+    const schedule1 = await tokenLockup.timelockOf(recipient.address, 0)
     expect(schedule1.scheduleId).to.equal(0)
     expect(schedule1.commencementTimestamp).to.equal(commence)
     expect(schedule1.tokensTransferred).to.equal(0)
     expect(schedule1.totalAmount).to.equal(100)
 
-    const schedule2 = await tokenLockup.viewTimelock(recipient.address, 1)
+    const schedule2 = await tokenLockup.timelockOf(recipient.address, 1)
     expect(schedule2.scheduleId).to.equal(1)
     expect(schedule2.tokensTransferred).to.equal(0)
     expect(schedule2.totalAmount).to.equal(200)

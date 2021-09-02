@@ -46,13 +46,8 @@ describe('TokenLockup unlock scheduling', async function () {
       [accounts[0].address],
       [totalSupply]
     )
-    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
-    const scheduleCalc = await ScheduleCalc.deploy()
-    TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
-      libraries: {
-        ScheduleCalc: scheduleCalc.address
-      }
-    })
+
+    TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
     tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
@@ -62,7 +57,7 @@ describe('TokenLockup unlock scheduling', async function () {
     )
   })
 
-  it('fundReleaseRelease schedule emits a ScheduleFunded event', async () => {
+  it('fundReleaseSchedule emits a ScheduleFunded event', async () => {
     const totalRecipientAmount = 1000
     const totalBatches = 3
     const firstDelay = 0
@@ -87,17 +82,19 @@ describe('TokenLockup unlock scheduling', async function () {
       recipient.address,
       490,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )).to.emit(tokenLockup, 'ScheduleFunded')
-      .withArgs(reserveAccount.address, recipient.address, 0, 490, commence, 0)
+      .withArgs(reserveAccount.address, recipient.address, 0, 490, commence, 0, [])
 
     await expect(tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
       510,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )).to.emit(tokenLockup, 'ScheduleFunded')
-      .withArgs(reserveAccount.address, recipient.address, 0, 510, commence, 1)
+      .withArgs(reserveAccount.address, recipient.address, 0, 510, commence, 1, [])
   })
 
   it('timelock creation with immediately unlocked tokens', async () => {
@@ -125,7 +122,8 @@ describe('TokenLockup unlock scheduling', async function () {
       recipient.address,
       totalRecipientAmount,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
@@ -184,7 +182,8 @@ describe('TokenLockup unlock scheduling', async function () {
         recipient.address,
         totalRecipientAmount,
         commence,
-        0 // scheduleId
+        0, // scheduleId
+        []
       )
     } catch (e) {
       errorMessage = e.message
@@ -225,7 +224,8 @@ describe('TokenLockup unlock scheduling', async function () {
         recipient.address,
         totalRecipientAmount,
         commence,
-        0 // scheduleId
+        0, // scheduleId
+        []
       )
     } catch (e) {
       errorMessage = e.message
@@ -266,7 +266,8 @@ describe('TokenLockup unlock scheduling', async function () {
         recipient.address,
         totalRecipientAmount,
         commence,
-        1 // scheduleId
+        1, // scheduleId
+        []
       )
     } catch (e) {
       errorMessage = e.message
@@ -290,7 +291,8 @@ describe('TokenLockup unlock scheduling', async function () {
       recipient.address,
       100,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )).to.equal(true)
   })
 
@@ -325,7 +327,8 @@ describe('TokenLockup unlock scheduling', async function () {
         recipient.address,
         totalRecipientAmount,
         await currentTimestamp(3603), // + 1 day with a little room for time drift
-        0 // scheduleId
+        0, // scheduleId
+        []
       )
     } catch (e) {
       errorMessage2 = e.message
@@ -337,7 +340,8 @@ describe('TokenLockup unlock scheduling', async function () {
       recipient.address,
       totalRecipientAmount,
       await currentTimestamp(), // + 1 day with a little room for time drift
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
     expect(await tokenLockup.timelockCountOf(recipient.address)).to.equal(1)
   })
@@ -364,7 +368,7 @@ describe('TokenLockup unlock scheduling', async function () {
       error = e.message
     }
 
-    expect(error).to.match(/revert first release > max/)
+    expect(error).to.match(/first release > max/)
   })
 
   it('can specify a schedule with a delay up to the max release delay', async () => {
@@ -420,7 +424,8 @@ describe('TokenLockup unlock scheduling', async function () {
         recipient.address,
         totalRecipientAmount,
         await currentTimestamp() + 10, // commences now but release delay starts after the 1 day max range
-        0 // scheduleId
+        0, // scheduleId
+        []
       )
     } catch (e) {
       errorMessage2 = e.message
@@ -450,9 +455,10 @@ describe('TokenLockup unlock scheduling', async function () {
       recipient.address,
       490,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )).to.emit(tokenLockup, 'ScheduleFunded')
-      .withArgs(reserveAccount.address, recipient.address, 0, 490, commence, 0)
+      .withArgs(reserveAccount.address, recipient.address, 0, 490, commence, 0, [])
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('490')

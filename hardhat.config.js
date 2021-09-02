@@ -2,6 +2,7 @@ require('@nomiclabs/hardhat-waffle')
 require('solidity-coverage')
 require('hardhat-gas-reporter')
 require('@nomiclabs/hardhat-etherscan')
+require('hardhat-docgen')
 require('dotenv').config({ path: '.env' })
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -129,5 +130,10 @@ module.exports = {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
     apiKey: process.env.ETHERSCAN_API_KEY
+  },
+  docgen: {
+    path: './docs',
+    clear: true,
+    runOnCompile: true
   }
 }

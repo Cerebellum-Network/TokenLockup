@@ -38,13 +38,7 @@ describe('TokenLockup griefer resilience', async function () {
       [totalSupply]
     )
 
-    const ScheduleCalc = await hre.ethers.getContractFactory('ScheduleCalc')
-    const scheduleCalc = await ScheduleCalc.deploy()
-    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup', {
-      libraries: {
-        ScheduleCalc: scheduleCalc.address
-      }
-    })
+    const TokenLockup = await hre.ethers.getContractFactory('TokenLockup')
     tokenLockup = await TokenLockup.deploy(
       token.address,
       'Xavier Yolo Zeus Token Lockup Release Scheduler',
@@ -82,7 +76,8 @@ describe('TokenLockup griefer resilience', async function () {
       recipient.address,
       1000,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     const fundings = []
@@ -92,7 +87,8 @@ describe('TokenLockup griefer resilience', async function () {
           recipient.address,
           1000,
           (commence + days(1000)),
-          0 // scheduleId
+          0, // scheduleId
+          []
         )
       )
     }
@@ -114,7 +110,8 @@ describe('TokenLockup griefer resilience', async function () {
       recipient.address,
       1000,
       commence,
-      0 // scheduleId
+      0, // scheduleId
+      []
     )
 
     const fundings = []
@@ -124,7 +121,8 @@ describe('TokenLockup griefer resilience', async function () {
           recipient.address,
           100e3,
           commence,
-          1 // scheduleId
+          1, // scheduleId
+          []
         )
       )
     }
