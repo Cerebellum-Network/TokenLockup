@@ -2,7 +2,7 @@ require('@nomiclabs/hardhat-waffle')
 require('solidity-coverage')
 require('hardhat-gas-reporter')
 require('@nomiclabs/hardhat-etherscan')
-require('hardhat-docgen')
+// require('hardhat-docgen')
 require('dotenv').config({ path: '.env' })
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -45,7 +45,8 @@ module.exports = {
         tokenLockupAddress: null,
         minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
         maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
-      }
+      },
+      initialBaseFeePerGas: 0
     },
     kovan: {
       token: {

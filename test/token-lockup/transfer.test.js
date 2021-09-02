@@ -155,8 +155,10 @@ describe('TokenLockup unlock scheduling', async function () {
     expect(await tokenLockup.unlockedBalanceOf(recipient.address)).to.equal('100')
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 0)).to.equal('100')
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 1)).to.equal('100')
     expect(await token.connect(reserveAccount).balanceOf(recipientAccount)).to.equal(0)
 
     // transfer 50 from the first timelock and 1 from the second timelock
@@ -164,9 +166,11 @@ describe('TokenLockup unlock scheduling', async function () {
 
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 0)).to.equal('50')
 
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('49')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 1)).to.equal('99')
     expect(await token.connect(reserveAccount).balanceOf(recipientAccount)).to.equal(51)
 
     // transfer 50 from the first timelock and 1 from the second timelock
@@ -174,9 +178,11 @@ describe('TokenLockup unlock scheduling', async function () {
 
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 0)).to.equal('50')
 
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('0')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 1)).to.equal('50')
 
     expect(await token.connect(reserveAccount).balanceOf(recipientAccount)).to.equal(100)
 
@@ -186,17 +192,21 @@ describe('TokenLockup unlock scheduling', async function () {
     expect(await tokenLockup.unlockedBalanceOf(recipient.address)).to.equal('100')
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 0)).to.equal('50')
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('0')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 1)).to.equal('50')
 
     // transfer 50 from the second timelock and 1 from the second timelock
     await tokenLockup.connect(recipient).transfer(recipientAccount, 51)
 
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 0)).to.equal('0')
 
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('49')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('0')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 1)).to.equal('49')
     expect(await token.connect(reserveAccount).balanceOf(recipientAccount)).to.equal(151)
 
     // transfer 50 from the second timelock and 1 from the second timelock
@@ -204,9 +214,11 @@ describe('TokenLockup unlock scheduling', async function () {
 
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('0')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 0)).to.equal('0')
 
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('0')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('0')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 1)).to.equal('0')
     expect(await token.connect(reserveAccount).balanceOf(recipientAccount)).to.equal(200)
   })
   it('unlocked tokens can transfer from just the first timelock of several', async () => {
@@ -251,8 +263,10 @@ describe('TokenLockup unlock scheduling', async function () {
     expect(await tokenLockup.unlockedBalanceOf(recipient.address)).to.equal('100')
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 0)).to.equal('100')
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 1)).to.equal('100')
     expect(await token.connect(reserveAccount).balanceOf(recipientAccount)).to.equal(0)
 
     // transfer 49 from the first timelock and 0 from the second timelock
@@ -260,9 +274,11 @@ describe('TokenLockup unlock scheduling', async function () {
 
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 0)).to.equal('1')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 0)).to.equal('50')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 0)).to.equal('51')
 
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 1)).to.equal('50')
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 1)).to.equal('100')
     expect(await token.connect(reserveAccount).balanceOf(recipientAccount)).to.equal(49)
   })
 })

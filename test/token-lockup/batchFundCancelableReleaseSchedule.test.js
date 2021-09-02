@@ -85,8 +85,9 @@ describe('TokenLockup calculate unlocked', async function () {
       .to.emit(tokenLockup, 'TimelockCanceled')
       .withArgs(
         canceler.address, // canceledBy
-        recipientAccount.address, // target
+        recipientAccount.address, // target,
         0, // timelock
+        accounts[1].address, // reclaim token to
         50, // canceledAmount
         0 // paidAmount
       )
@@ -99,6 +100,7 @@ describe('TokenLockup calculate unlocked', async function () {
         canceler.address, // canceledBy
         recipientAccount.address, // target
         1, // timelock
+        accounts[1].address, // reclaim token to
         50, // canceledAmount
         0 // paidAmount
       )
@@ -136,8 +138,9 @@ describe('TokenLockup calculate unlocked', async function () {
         .to.emit(tokenLockup, 'TimelockCanceled')
         .withArgs(
           reserveAccount.address, // canceledBy
-          recipientAccount.address, // target
+          recipientAccount.address, // target,
           0, // timelock
+          reserveAccount.address, // reclaim token to
           100, // canceledAmount
           0 // paidAmount
         )
@@ -156,8 +159,9 @@ describe('TokenLockup calculate unlocked', async function () {
         .to.emit(tokenLockup, 'TimelockCanceled')
         .withArgs(
           reserveAccount.address, // canceledBy
-          recipientAccount.address, // target
+          recipientAccount.address, // target,
           0, // timelock
+          reserveAccount.address, // reclaim token to
           50, // canceledAmount
           50 // paidAmount
         )

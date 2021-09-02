@@ -71,6 +71,12 @@ describe('TokenLockup unlock scheduling', async function () {
     )
   })
 
+  it('token approval emits an event', async () => {
+    await expect(tokenLockup.connect(recipient).approve(allowedAccount.address, 7))
+      .to.emit(tokenLockup, 'Approval')
+      .withArgs(recipient.address, allowedAccount.address, 7)
+  })
+
   it('unlocked tokens can be transferred by an approved account with balances from multiple lockups', async () => {
     expect(await tokenLockup.connect(recipient).balanceOf(recipient.address)).to.equal(100)
     expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(0)
@@ -87,10 +93,16 @@ describe('TokenLockup unlock scheduling', async function () {
     await tokenLockup.connect(recipient).approve(allowedAccount.address, 7)
     expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(7)
 
-    await tokenLockup.connect(recipient).increaseAllowance(allowedAccount.address, 5)
+    await expect(tokenLockup.connect(recipient).increaseAllowance(allowedAccount.address, 5))
+      .to.emit(tokenLockup, 'Approval')
+      .withArgs(recipient.address, allowedAccount.address, 12)
+
     expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(12)
 
-    await tokenLockup.connect(recipient).decreaseAllowance(allowedAccount.address, 1)
+    await expect(tokenLockup.connect(recipient).decreaseAllowance(allowedAccount.address, 1))
+      .to.emit(tokenLockup, 'Approval')
+      .withArgs(recipient.address, allowedAccount.address, 11)
+
     expect(await tokenLockup.connect(recipient).allowance(recipient.address, allowedAccount.address)).to.equal(11)
 
     await tokenLockup.connect(allowedAccount).transferFrom(recipient.address, allowedAccountRecipient.address, 11)
