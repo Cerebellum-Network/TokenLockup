@@ -44,8 +44,7 @@ contract TokenLockup {
     mapping(address => mapping(address => uint)) internal _allowances;
 
     event Approval(address indexed from, address indexed spender, uint amount);
-    event TimelockBurned(address indexed from, uint timelockId);
-    event ScheduleCreated(address indexed from, uint scheduleId);
+    event ScheduleCreated(address indexed from, uint indexed scheduleId);
 
     event ScheduleFunded(
         address indexed from,
@@ -60,7 +59,8 @@ contract TokenLockup {
     event TimelockCanceled(
         address indexed canceledBy,
         address indexed target,
-        uint timelockIndex,
+        uint indexed timelockIndex,
+        address relaimTokenTo,
         uint canceledAmount,
         uint paidAmount
     );
@@ -217,7 +217,7 @@ contract TokenLockup {
         token.safeTransfer(reclaimTokenTo, canceledAmount);
         token.safeTransfer(target, paidAmount);
 
-        emit TimelockCanceled(msg.sender, target, timelockIndex, canceledAmount, paidAmount);
+        emit TimelockCanceled(msg.sender, target, timelockIndex, reclaimTokenTo, canceledAmount, paidAmount);
 
         timelock.tokensTransferred = timelock.totalAmount;
         return true;
@@ -318,6 +318,21 @@ contract TokenLockup {
             return 0;
         } else {
             return totalUnlockedToDateOfTimelock(who, timelockIndex) - timelock.tokensTransferred;
+        }
+    }
+
+    /**
+        @notice Check the total remaining balance of a timelock including the locked and unlocked portions
+        @param who the address to check
+        @param timelockIndex  Specific timelock belonging to the who address
+        @return total remaining balance of a timelock
+     */
+    function balanceOfTimelock(address who, uint timelockIndex) external view returns (uint) {
+        Timelock memory timelock = timelockOf(who, timelockIndex);
+        if (timelock.totalAmount <= timelock.tokensTransferred) {
+            return 0;
+        } else {
+            return timelock.totalAmount - timelock.tokensTransferred;
         }
     }
 
