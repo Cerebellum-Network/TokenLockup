@@ -179,6 +179,11 @@ describe('TokenLockup timelock balances', async function () {
     expect(await tokenLockup.lockedBalanceOfTimelock(recipient.address, 1))
       .to.equal('184')
 
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 0))
+      .to.equal(8 + 92)
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 1))
+      .to.equal(16 + 184)
+
     expect(await tokenLockup.balanceOf(recipient.address))
       .to.equal('300')
   })
@@ -249,6 +254,11 @@ describe('TokenLockup timelock balances', async function () {
 
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1))
       .to.equal('8')
+
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 0))
+      .to.equal(92 + 8)
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 1))
+      .to.equal(92 + 8)
   })
 
   it('creating a timelock increases the totalSupply and transferring decreases it', async () => {
@@ -381,5 +391,11 @@ describe('TokenLockup timelock balances', async function () {
 
     expect(await tokenLockup.unlockedBalanceOfTimelock(recipient.address, 1))
       .to.equal('0')
+
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 0))
+      .to.equal('100')
+
+    expect(await tokenLockup.balanceOfTimelock(recipient.address, 1))
+      .to.equal('100')
   })
 })
