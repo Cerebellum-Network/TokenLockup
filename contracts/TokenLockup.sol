@@ -524,7 +524,7 @@ contract TokenLockup {
         uint amount,
         uint scheduleId
     ) public view returns (uint unlocked) {
-        return calculateUnlockedFormula(commencedTimestamp, currentTimestamp, amount, releaseSchedules[scheduleId]);
+        return calculateUnlocked(commencedTimestamp, currentTimestamp, amount, releaseSchedules[scheduleId]);
     }
 
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
@@ -566,13 +566,13 @@ contract TokenLockup {
         @param releaseSchedule a ReleaseSchedule struct used to calculate the unlocked amount
         @return unlocked the total amount unlocked for the schedule given the other parameters
     */
-    function calculateUnlockedFormula(
+    function calculateUnlocked(
         uint commencedTimestamp,
         uint currentTimestamp,
         uint amount,
         ReleaseSchedule memory releaseSchedule)
     public pure returns (uint unlocked) {
-        return calculateUnlockedFormula(
+        return calculateUnlocked(
             commencedTimestamp,
             currentTimestamp,
             amount,
@@ -594,7 +594,7 @@ contract TokenLockup {
         @param periodBetweenReleasesInSeconds After the delay and initial release
         @return unlocked the total amount unlocked for the schedule given the other parameters
     */
-    function calculateUnlockedFormula(
+    function calculateUnlocked(
         uint commencedTimestamp,
         uint currentTimestamp,
         uint amount,
