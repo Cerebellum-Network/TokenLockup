@@ -518,8 +518,13 @@ contract TokenLockup {
         @param scheduleId the schedule id used to calculate the unlocked amount
         @return unlocked the total amount unlocked for the schedule given the other parameters
     */
-    function calculateUnlocked(uint commencedTimestamp, uint currentTimestamp, uint amount, uint scheduleId) public view returns (uint unlocked) {
-        return calculateUnlockedFormula(commencedTimestamp, currentTimestamp, amount, releaseSchedules[scheduleId]);
+    function calculateUnlocked(
+        uint commencedTimestamp,
+        uint currentTimestamp,
+        uint amount,
+        uint scheduleId
+    ) public view returns (uint unlocked) {
+        return calculateUnlocked(commencedTimestamp, currentTimestamp, amount, releaseSchedules[scheduleId]);
     }
 
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
@@ -561,12 +566,43 @@ contract TokenLockup {
         @param releaseSchedule a ReleaseSchedule struct used to calculate the unlocked amount
         @return unlocked the total amount unlocked for the schedule given the other parameters
     */
-    function calculateUnlockedFormula(
+    function calculateUnlocked(
         uint commencedTimestamp,
         uint currentTimestamp,
         uint amount,
         ReleaseSchedule memory releaseSchedule)
     public pure returns (uint unlocked) {
+        return calculateUnlocked(
+            commencedTimestamp,
+            currentTimestamp,
+            amount,
+            releaseSchedule.releaseCount,
+            releaseSchedule.delayUntilFirstReleaseInSeconds,
+            releaseSchedule.initialReleasePortionInBips,
+            releaseSchedule.periodBetweenReleasesInSeconds
+        );
+    }
+
+    /**
+        @notice The same functionality as above function with spread format of `releaseSchedule` arg
+        @param commencedTimestamp the commencement time to use in the calculation for the scheduled
+        @param currentTimestamp the timestamp to calculate unlocked tokens for
+        @param amount the amount of tokens
+        @param releaseCount Total number of releases including any initial "cliff'
+        @param delayUntilFirstReleaseInSeconds "cliff" or 0 for immediate release
+        @param initialReleasePortionInBips Portion to release in 100ths of 1% (10000 BIPS per 100%)
+        @param periodBetweenReleasesInSeconds After the delay and initial release
+        @return unlocked the total amount unlocked for the schedule given the other parameters
+    */
+    function calculateUnlocked(
+        uint commencedTimestamp,
+        uint currentTimestamp,
+        uint amount,
+        uint releaseCount,
+        uint delayUntilFirstReleaseInSeconds,
+        uint initialReleasePortionInBips,
+        uint periodBetweenReleasesInSeconds
+    ) public pure returns (uint unlocked) {
         if (commencedTimestamp > currentTimestamp) {
             return 0;
         }
@@ -576,30 +612,29 @@ contract TokenLockup {
         // unlocked amounts in each period are truncated and round down remainders smaller than the smallest unit
         // unlocking the full amount unlocks any remainder amounts in the final unlock period
         // this is done first to reduce computation
-        if (secondsElapsed >= releaseSchedule.delayUntilFirstReleaseInSeconds +
-        (releaseSchedule.periodBetweenReleasesInSeconds * (releaseSchedule.releaseCount - 1))) {
+        if (
+            secondsElapsed >= delayUntilFirstReleaseInSeconds +
+            (periodBetweenReleasesInSeconds * (releaseCount - 1))
+        ) {
             return amount;
         }
 
         // unlock the initial release if the delay has elapsed
-        if (secondsElapsed >= releaseSchedule.delayUntilFirstReleaseInSeconds) {
-            unlocked = (amount * releaseSchedule.initialReleasePortionInBips) / BIPS_PRECISION;
+        if (secondsElapsed >= delayUntilFirstReleaseInSeconds) {
+            unlocked = (amount * initialReleasePortionInBips) / BIPS_PRECISION;
 
             // if at least one period after the delay has passed
-            if (secondsElapsed - releaseSchedule.delayUntilFirstReleaseInSeconds
-                >= releaseSchedule.periodBetweenReleasesInSeconds) {
+            if (secondsElapsed - delayUntilFirstReleaseInSeconds >= periodBetweenReleasesInSeconds) {
 
                 // calculate the number of additional periods that have passed (not including the initial release)
                 // this discards any remainders (ie it truncates / rounds down)
-                uint additionalUnlockedPeriods =
-                (secondsElapsed - releaseSchedule.delayUntilFirstReleaseInSeconds) /
-                releaseSchedule.periodBetweenReleasesInSeconds;
+                uint additionalUnlockedPeriods = (secondsElapsed - delayUntilFirstReleaseInSeconds) / periodBetweenReleasesInSeconds;
 
                 // calculate the amount of unlocked tokens for the additionalUnlockedPeriods
                 // multiplication is applied before division to delay truncating to the smallest unit
                 // this distributes unlocked tokens more evenly across unlock periods
                 // than truncated division followed by multiplication
-                unlocked += ((amount - unlocked) * additionalUnlockedPeriods) / (releaseSchedule.releaseCount - 1);
+                unlocked += ((amount - unlocked) * additionalUnlockedPeriods) / (releaseCount - 1);
             }
         }
 
