@@ -334,7 +334,7 @@ describe('TokenLockup unlock scheduling', async function () {
       errorMessage2 = e.message
     }
 
-    expect(errorMessage2).to.match(/commencement time out of range/)
+    expect(errorMessage2).to.match(/initial release out of range/)
 
     await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
