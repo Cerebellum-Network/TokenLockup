@@ -20,7 +20,7 @@ contract Token is ERC20Capped {
         customDecimals = _decimals;
 
         for (uint i; i < _mintAddresses.length; i++) {
-            require(_mintAddresses[i] != address(0), "Cannot have a non-address as reserve.");
+            require(_mintAddresses[i] != address(0), "cannot have a non-address as reserve");
             ERC20._mint(_mintAddresses[i], _mintAmounts[i]);
         }
 
