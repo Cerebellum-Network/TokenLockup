@@ -72,10 +72,8 @@ describe('Token deployment', async () => {
   })
 
   it('must have matching mint addresses and amounts', async () => {
-    let error
-
-    try {
-      await Token.deploy(
+    await expect(
+      Token.deploy(
         'Test Scheduled Release Token',
         'SCHR',
         decimals,
@@ -83,19 +81,12 @@ describe('Token deployment', async () => {
         [accounts[0].address],
         [5, 5]
       )
-    } catch (e) {
-      error = e
-    }
-
-    expect(error).to.be.a('error')
-    expect(error.message).to.match(/^VM Exception.*must have same number of mint addresses and amounts/)
+    ).to.revertedWith('must have same number of mint addresses and amounts')
   })
 
   it('cannot mint the reserve to the 0 address', async () => {
-    let error
-
-    try {
-      await Token.deploy(
+    await expect(
+      Token.deploy(
         'Test Scheduled Release Token',
         'SCHR',
         decimals,
@@ -103,21 +94,14 @@ describe('Token deployment', async () => {
         [the0Address],
         [cap]
       )
-    } catch (e) {
-      error = e
-    }
-
-    expect(error).to.be.a('error')
-    expect(error.message).to.match(/^VM Exception.*Cannot have a non-address as reserve/)
+    ).to.revertedWith('cannot have a non-address as reserve')
   })
 
   it('cannot mint more than the cap on deploy', async () => {
-    let error
-
     cap = 100
 
-    try {
-      await Token.deploy(
+    await expect(
+      Token.deploy(
         'Test Scheduled Release Token',
         'SCHR',
         decimals,
@@ -125,21 +109,14 @@ describe('Token deployment', async () => {
         [accounts[0].address, accounts[1].address],
         [cap, 1]
       )
-    } catch (e) {
-      error = e
-    }
-
-    expect(error).to.be.a('error')
-    expect(error.message).to.match(/^VM Exception.*total supply of tokens cannot exceed the cap/)
+    ).to.revertedWith('total supply of tokens cannot exceed the cap')
   })
 
   it('cannot have a totalSupply of 0', async () => {
-    let error
-
     cap = 0
 
-    try {
-      await Token.deploy(
+    await expect(
+      Token.deploy(
         'Test Scheduled Release Token',
         'SCHR',
         decimals,
@@ -147,11 +124,6 @@ describe('Token deployment', async () => {
         [accounts[0].address],
         [cap]
       )
-    } catch (e) {
-      error = e
-    }
-
-    expect(error).to.be.a('error')
-    expect(error.message).to.match(/^VM Exception.*Cannot have 0 total supply/)
+    ).to.revertedWith('ERC20Capped: cap is 0')
   })
 })

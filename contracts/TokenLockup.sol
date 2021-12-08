@@ -3,7 +3,7 @@
 pragma solidity 0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IERC20 as IERC20Token } from "./IERC20.sol";
+import "./IERC20Decimals.sol";
 
 /**
     @title A smart contract for unlocking tokens based on a release schedule
@@ -13,9 +13,9 @@ import { IERC20 as IERC20Token } from "./IERC20.sol";
         The token must implement a burn function.
 */
 contract TokenLockup {
-    using SafeERC20 for IERC20Token;
+    using SafeERC20 for IERC20Decimals;
 
-    IERC20Token public token;
+    IERC20Decimals immutable public token;
     string private _name;
     string private _symbol;
 
@@ -35,9 +35,9 @@ contract TokenLockup {
     }
 
     ReleaseSchedule[] public releaseSchedules;
-    uint public minTimelockAmount;
-    uint public maxReleaseDelay;
-    uint constant BIPS_PRECISION = 10000;
+    uint immutable public minTimelockAmount;
+    uint immutable public maxReleaseDelay;
+    uint private constant BIPS_PRECISION = 10000;
 
     mapping(address => Timelock[]) public timelocks;
     mapping(address => uint) internal _totalTokensUnlocked;
@@ -81,7 +81,7 @@ contract TokenLockup {
     ) {
         _name = name_;
         _symbol = symbol_;
-        token = IERC20Token(_token);
+        token = IERC20Decimals(_token);
 
         require(_minTimelockAmount > 0, "Min timelock amount > 0");
         minTimelockAmount = _minTimelockAmount;
@@ -109,8 +109,7 @@ contract TokenLockup {
 
         if (releaseCount > 1) {
             require(periodBetweenReleasesInSeconds > 0, "period = 0");
-        }
-        if (releaseCount == 1) {
+        } else if (releaseCount == 1) {
             require(initialReleasePortionInBips == BIPS_PRECISION, "released < 100%");
         }
 
@@ -170,9 +169,6 @@ contract TokenLockup {
         require(amount >= releaseSchedules[scheduleId].releaseCount, "< 1 token per release");
         // It will revert via ERC20 implementation if there's no allowance
         token.safeTransferFrom(msg.sender, address(this), amount);
-        require(
-            commencementTimestamp <= block.timestamp + maxReleaseDelay
-        , "commencement time out of range");
 
         require(
             commencementTimestamp + releaseSchedules[scheduleId].delayUntilFirstReleaseInSeconds <=
@@ -245,11 +241,11 @@ contract TokenLockup {
      *  @return success Always returns true on completion so that a function calling it can revert if the required call did not succeed
      */
     function batchFundReleaseSchedule(
-        address[] memory to,
-        uint[] memory amounts,
-        uint[] memory commencementTimestamps,
-        uint[] memory scheduleIds,
-        address[] memory cancelableBy
+        address[] calldata to,
+        uint[] calldata amounts,
+        uint[] calldata commencementTimestamps,
+        uint[] calldata scheduleIds,
+        address[] calldata cancelableBy
     ) external returns (bool success) {
         require(to.length == amounts.length, "mismatched array length");
         require(to.length == commencementTimestamps.length, "mismatched array length");
@@ -429,7 +425,7 @@ contract TokenLockup {
     function decreaseAllowance(address spender, uint subtractedValue) external returns (bool) {
         uint currentAllowance = _allowances[msg.sender][spender];
         require(currentAllowance >= subtractedValue, "decrease > allowance");
-        _approve(msg.sender, spender, _allowances[msg.sender][spender] - subtractedValue);
+        _approve(msg.sender, spender, currentAllowance - subtractedValue);
         return true;
     }
     /**
@@ -529,7 +525,7 @@ contract TokenLockup {
 
     // Code from OpenZeppelin's contract/token/ERC20/ERC20.sol, modified
     function _approve(address owner, address spender, uint amount) internal {
-        require(owner != address(0));
+        require(owner != address(0), "owner is 0 address");
         require(spender != address(0), "spender is 0 address");
 
         _allowances[owner][spender] = amount;
