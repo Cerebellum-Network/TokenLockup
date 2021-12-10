@@ -190,11 +190,20 @@ contract TokenLockup {
             If canceled the tokens that are locked at the time of the cancellation will be returned to the funder
             and unlocked tokens will be transferred to the recipient.
         @param target The address that would receive the tokens when released from the timelock.
+        @param timelockIndex timelock index
+        @param target The address that would receive the tokens when released from the timelock
+        @param scheduleId require it matches expected
+        @param commencementTimestamp require it matches expected
+        @param totalAmount require it matches expected
+        @param reclaimTokenTo reclaim token to
         @return success Always returns true on completion so that a function calling it can revert if the required call did not succeed
     */
     function cancelTimelock(
         address target,
         uint timelockIndex,
+        uint scheduleId,
+        uint commencementTimestamp,
+        uint totalAmount,
         address reclaimTokenTo
     ) public returns (bool success) {
         require(timelockCountOf(target) > timelockIndex, "invalid timelock");
@@ -203,6 +212,9 @@ contract TokenLockup {
         Timelock storage timelock = timelocks[target][timelockIndex];
 
         require(_canBeCanceled(timelock), "You are not allowed to cancel this timelock");
+        require(timelock.scheduleId == scheduleId, "Expected scheduleId not match");
+        require(timelock.commencementTimestamp == commencementTimestamp, "Expected scheduleId not match");
+        require(timelock.totalAmount == totalAmount, "Expected totalAmount not match");
 
         uint canceledAmount = lockedBalanceOfTimelock(target, timelockIndex);
 
