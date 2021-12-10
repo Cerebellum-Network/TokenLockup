@@ -212,9 +212,9 @@ contract TokenLockup {
         Timelock storage timelock = timelocks[target][timelockIndex];
 
         require(_canBeCanceled(timelock), "You are not allowed to cancel this timelock");
-        require(timelock.scheduleId == scheduleId, "Expected scheduleId not match");
-        require(timelock.commencementTimestamp == commencementTimestamp, "Expected scheduleId not match");
-        require(timelock.totalAmount == totalAmount, "Expected totalAmount not match");
+        require(timelock.scheduleId == scheduleId, "Expected scheduleId does not match");
+        require(timelock.commencementTimestamp == commencementTimestamp, "Expected commencementTimestamp does not match");
+        require(timelock.totalAmount == totalAmount, "Expected totalAmount does not match");
 
         uint canceledAmount = lockedBalanceOfTimelock(target, timelockIndex);
 
