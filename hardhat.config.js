@@ -101,8 +101,8 @@ module.exports = {
         mintAmounts: [walletAmount1.toString(), wallet2Amount2.toString()]
       },
       lockup: {
-        tokenAddress: null,
-        tokenLockupAddress: null,
+        tokenAddress: '0x2dA719DB753dFA10a62E140f436E1d67F2ddB0d6', // CERE on Ethereum and Polygon.
+        tokenLockupAddress: "0x15B363ceb7688a727b8406AED009D70F7704Cd34",
         minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
         maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
       },
@@ -110,6 +110,48 @@ module.exports = {
       accounts: {
         mnemonic: process.env.MAINNET
       }
+    },
+    mumbai: {
+      token: {
+        name: 'Xavier Yolo Zeta',
+        symbol: 'XYZ',
+        decimals: 10,
+        totalSupply: tenBillionWithTenDecimalPrecision.toString(), // 10B + 10 decimals
+        mintAddresses: ['0xdFA017425c938c13ef362544D2662230cC7668eB', '0x421C655a9A40930c10eaD2b479ad529342973E68'],
+        mintAmounts: [walletAmount1.toString(), wallet2Amount2.toString()]
+      },
+      lockup: {
+        tokenAddress: '0x48539602B5b5a1B722A854a2fcFCc6Ce02d68e7B', // Test Token on Mumbai.
+        tokenLockupAddress: "0x1131CFa38bde1D2794915E792e4442c3Fa156bf9",
+        minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
+        maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
+      },
+      url: process.env.MUMBAI_NETWORK_URL,
+      accounts: {
+        mnemonic: process.env.MUMBAI
+      },
+      gas: 4 * 1e6
+    },
+    polygon: {
+      token: {
+        name: 'CERE Network',
+        symbol: 'CERE',
+        decimals: 10,
+        totalSupply: tenBillionWithTenDecimalPrecision.toString(), // 10B + 10 decimals
+        mintAddresses: [],
+        mintAmounts: []
+      },
+      lockup: {
+        tokenAddress: '0x2dA719DB753dFA10a62E140f436E1d67F2ddB0d6', // CERE on Ethereum and Polygon.
+        tokenLockupAddress: "0x544c8d2aa14262667Ba7516383bA552e98A6cF19",
+        minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
+        maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
+      },
+      url: process.env.POLYGON_NETWORK_URL,
+      accounts: {
+        mnemonic: process.env.POLYGON
+      },
+      gas: 4 * 1e6
     }
   },
   solidity: {
