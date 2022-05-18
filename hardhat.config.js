@@ -117,12 +117,12 @@ module.exports = {
         symbol: 'XYZ',
         decimals: 10,
         totalSupply: tenBillionWithTenDecimalPrecision.toString(), // 10B + 10 decimals
-        mintAddresses: ['0xdFA017425c938c13ef362544D2662230cC7668eB', '0x421C655a9A40930c10eaD2b479ad529342973E68'],
+        mintAddresses: ['0x51c5590504251A5993Ba6A46246f87Fa0eaE5897', '0x421C655a9A40930c10eaD2b479ad529342973E68'],
         mintAmounts: [walletAmount1.toString(), wallet2Amount2.toString()]
       },
       lockup: {
-        tokenAddress: '0x48539602B5b5a1B722A854a2fcFCc6Ce02d68e7B', // Test Token on Mumbai.
-        tokenLockupAddress: "0x1131CFa38bde1D2794915E792e4442c3Fa156bf9",
+        tokenAddress: '0x2b22F523A4a2F46F6A68cF177D617a153A05B845', // Test Token on Mumbai.
+        tokenLockupAddress: "0xd32A9D220C56abD1b9d595c91ac380E16D14De15",
         minReleaseScheduleAmountInBaseTokens: oneHundredTokensWithTenDecimalsPrecision,
         maxReleaseDelay: sixYearsInSeconds// 10 tokens with 10 decimals
       },
