@@ -37,6 +37,7 @@ contract TokenLockup {
     ReleaseSchedule[] public releaseSchedules;
     uint immutable public minTimelockAmount;
     uint immutable public maxReleaseDelay;
+    uint immutable public maxReleasesPerUses = 20;
     uint private constant BIPS_PRECISION = 10000;
 
     mapping(address => Timelock[]) public timelocks;
@@ -163,6 +164,7 @@ contract TokenLockup {
         uint commencementTimestamp, // unix timestamp
         uint scheduleId)
     internal returns (uint) {
+        require(timelocks[to].length <= maxReleasesPerUses, "too many releases funded per user"); 
         require(amount >= minTimelockAmount, "amount < min funding");
         require(to != address(0), "to 0 address");
         require(scheduleId < releaseSchedules.length, "bad scheduleId");
@@ -188,33 +190,20 @@ contract TokenLockup {
         @notice Cancel a cancelable timelock created by the fundReleaseSchedule function.
             WARNING: this function cannot cancel a release schedule created by fundReleaseSchedule
             If canceled the tokens that are locked at the time of the cancellation will be returned to the funder
-            and unlocked tokens will be transferred to the recipient.
-        @param target The address that would receive the tokens when released from the timelock.
-        @param timelockIndex timelock index
+            and unlocked tokens will be transferred to the recipient
         @param target The address that would receive the tokens when released from the timelock
-        @param scheduleId require it matches expected
-        @param commencementTimestamp require it matches expected
-        @param totalAmount require it matches expected
-        @param reclaimTokenTo reclaim token to
+        @param timelockIndex timelock index
         @return success Always returns true on completion so that a function calling it can revert if the required call did not succeed
     */
     function cancelTimelock(
         address target,
         uint timelockIndex,
-        uint scheduleId,
-        uint commencementTimestamp,
-        uint totalAmount,
-        address reclaimTokenTo
     ) public returns (bool success) {
         require(timelockCountOf(target) > timelockIndex, "invalid timelock");
-        require(reclaimTokenTo != address(0), "Invalid reclaimTokenTo");
 
         Timelock storage timelock = timelocks[target][timelockIndex];
 
         require(_canBeCanceled(timelock), "You are not allowed to cancel this timelock");
-        require(timelock.scheduleId == scheduleId, "Expected scheduleId does not match");
-        require(timelock.commencementTimestamp == commencementTimestamp, "Expected commencementTimestamp does not match");
-        require(timelock.totalAmount == totalAmount, "Expected totalAmount does not match");
 
         uint canceledAmount = lockedBalanceOfTimelock(target, timelockIndex);
 
@@ -222,12 +211,18 @@ contract TokenLockup {
 
         uint paidAmount = unlockedBalanceOfTimelock(target, timelockIndex);
 
-        token.safeTransfer(reclaimTokenTo, canceledAmount);
+        timelock.tokensTransferred = timelock.totalAmount;
+        address[] storage cancelableBy = timelock.cancelableBy;
+        uint numberRecepients = cancelableBy.length;
+        uint amountPerRecepient = canceledAmount / numberRecepients;
+        //check for efficiency 
+        for (uint256 i; i < numberRecepients; ++i) {
+            token.safeTransfer(cancelableBy[i], amountPerRecepient);
+        }  
         token.safeTransfer(target, paidAmount);
 
         emit TimelockCanceled(msg.sender, target, timelockIndex, reclaimTokenTo, canceledAmount, paidAmount);
 
-        timelock.tokensTransferred = timelock.totalAmount;
         return true;
     }
 
@@ -235,7 +230,7 @@ contract TokenLockup {
      *  @notice Check if timelock can be cancelable by msg.sender
      */
     function _canBeCanceled(Timelock storage timelock) view private returns (bool){
-        for (uint i = 0; i < timelock.cancelableBy.length; i++) {
+        for (uint i; i < timelock.cancelableBy.length; ++i) {
             if (msg.sender == timelock.cancelableBy[i]) {
                 return true;
             }
@@ -263,7 +258,7 @@ contract TokenLockup {
         require(to.length == commencementTimestamps.length, "mismatched array length");
         require(to.length == scheduleIds.length, "mismatched array length");
 
-        for (uint i = 0; i < to.length; i++) {
+        for (uint i; i < to.length; ++i) {
             require(fundReleaseSchedule(
                 to[i],
                 amounts[i],
@@ -282,7 +277,7 @@ contract TokenLockup {
         @return amount The total locked amount of tokens for all of the who address's timelocks
     */
     function lockedBalanceOf(address who) public view returns (uint amount) {
-        for (uint i = 0; i < timelockCountOf(who); i++) {
+        for (uint i; i < timelockCountOf(who); ++i) {
             amount += lockedBalanceOfTimelock(who, i);
         }
         return amount;
@@ -293,7 +288,7 @@ contract TokenLockup {
         @return amount The total unlocked amount of tokens for all of the who address's timelocks
     */
     function unlockedBalanceOf(address who) public view returns (uint amount) {
-        for (uint i = 0; i < timelockCountOf(who); i++) {
+        for (uint i; i < timelockCountOf(who); ++i) {
             amount += unlockedBalanceOfTimelock(who, i);
         }
         return amount;
@@ -476,7 +471,7 @@ contract TokenLockup {
         uint remainingTransfer = value;
 
         // transfer from unlocked tokens
-        for (uint i = 0; i < timelockCountOf(from); i++) {
+        for (uint i; i < timelockCountOf(from); ++i) {
             // if the timelock has no value left
             if (timelocks[from][i].tokensTransferred == timelocks[from][i].totalAmount) {
                 continue;
