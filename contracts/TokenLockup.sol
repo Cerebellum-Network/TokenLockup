@@ -61,7 +61,7 @@ contract TokenLockup {
         address indexed canceledBy,
         address indexed target,
         uint indexed timelockIndex,
-        address relaimTokenTo,
+        address[] relaimTokenTo,
         uint canceledAmount,
         uint paidAmount
     );
@@ -197,7 +197,7 @@ contract TokenLockup {
     */
     function cancelTimelock(
         address target,
-        uint timelockIndex,
+        uint timelockIndex
     ) public returns (bool success) {
         require(timelockCountOf(target) > timelockIndex, "invalid timelock");
 
@@ -221,7 +221,7 @@ contract TokenLockup {
         }  
         token.safeTransfer(target, paidAmount);
 
-        emit TimelockCanceled(msg.sender, target, timelockIndex, reclaimTokenTo, canceledAmount, paidAmount);
+        emit TimelockCanceled(msg.sender, target, timelockIndex, cancelableBy, canceledAmount, paidAmount);
 
         return true;
     }

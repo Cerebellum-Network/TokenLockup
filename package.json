@@ -41,13 +41,12 @@
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-etherscan": "^3.0.0",
     "chai": "^4.3.4",
-    "hardhat": "^2.2.1",
+    "hardhat": "^2.16.1",
     "hardhat-docgen": "^1.1.1",
     "hardhat-gas-reporter": "^1.0.4",
     "solidity-coverage": "^0.7.16",
     "standard": "^16.0.3"
   },
-
   "standard": {
     "ignore": [
       "/docs/**"

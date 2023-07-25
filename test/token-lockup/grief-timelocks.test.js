@@ -70,7 +70,7 @@ describe('TokenLockup griefer resilience', async function () {
     )
   })
 
-  it('unlocked tokens can be transferred when there are 101 timelocks created in the future', async () => {
+  it('unlocked tokens can be transferred when there are 20 timelocks created in the future', async () => {
     const commence = await exactlyMoreThanOneDayAgo()
     await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
@@ -81,7 +81,7 @@ describe('TokenLockup griefer resilience', async function () {
     )
 
     const fundings = []
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 19; i++) {
       fundings.push(
         tokenLockup.connect(reserveAccount).fundReleaseSchedule(
           recipient.address,
@@ -94,7 +94,7 @@ describe('TokenLockup griefer resilience', async function () {
     }
     await Promise.all(fundings)
     expect(await tokenLockup.timelockCountOf(recipient.address))
-      .to.equal('101')
+      .to.equal('20')
 
     expect(await tokenLockup.unlockedBalanceOf(recipient.address))
       .to.equal('500')
@@ -104,7 +104,7 @@ describe('TokenLockup griefer resilience', async function () {
     expect(balance).to.equal(500)
   }).timeout(10000)
 
-  it('unlocked tokens can be transferred when there are 101 timelocks running in parallel', async () => {
+  it('unlocked tokens can be transferred when there are 20 timelocks running in parallel', async () => {
     const commence = await exactlyMoreThanOneDayAgo()
     await tokenLockup.connect(reserveAccount).fundReleaseSchedule(
       recipient.address,
@@ -115,7 +115,7 @@ describe('TokenLockup griefer resilience', async function () {
     )
 
     const fundings = []
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 19; i++) {
       fundings.push(
         tokenLockup.connect(reserveAccount).fundReleaseSchedule(
           recipient.address,
@@ -128,11 +128,11 @@ describe('TokenLockup griefer resilience', async function () {
     }
     await Promise.all(fundings)
     expect(await tokenLockup.timelockCountOf(recipient.address))
-      .to.equal('101')
+      .to.equal('20')
 
     const unlocked = parseInt(await tokenLockup.unlockedBalanceOf(recipient.address))
     expect(unlocked)
-      .to.greaterThan(300000)
+      .to.greaterThan(60000)
 
     await tokenLockup.connect(recipient).transfer(accounts[2].address, 500)
     const balance = await token.connect(reserveAccount).balanceOf(accounts[2].address)

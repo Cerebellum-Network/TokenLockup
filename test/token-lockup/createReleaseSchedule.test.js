@@ -68,7 +68,7 @@ describe('TokenLockup create release schedule', async function () {
 
     let errorMessage
     try {
-      await tokenLockup.connect(reserveAccount).cancelTimelock(accounts[1].address, 0, 0, 0, 1000, accounts[0].address)
+      await tokenLockup.connect(reserveAccount).cancelTimelock(accounts[1].address, 0)
     } catch (e) {
       errorMessage = e.message
     }

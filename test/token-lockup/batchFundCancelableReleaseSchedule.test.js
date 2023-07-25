@@ -80,38 +80,29 @@ describe('TokenLockup calculate unlocked', async function () {
 
     expect(await tokenLockup.timelockCountOf(recipientAccount.address)).to.equal(2)
 
-    await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0, scheduledId, commenced, amount, accounts[1].address))
+    await expect(tokenLockup.cancelTimelock(recipientAccount.address, 0))
       .to.revertedWith('You are not allowed to cancel this timelock')
 
-    await expect(tokenLockup.connect(canceler).cancelTimelock(recipientAccount.address, 0, 999, commenced, amount, accounts[1].address))
-      .to.revertedWith('Expected scheduleId does not match')
-
-    await expect(tokenLockup.connect(canceler).cancelTimelock(recipientAccount.address, 0, scheduledId, 999, amount, accounts[1].address))
-      .to.revertedWith('Expected commencementTimestamp does not match')
-
-    await expect(tokenLockup.connect(canceler).cancelTimelock(recipientAccount.address, 0, scheduledId, commenced, 999, accounts[1].address))
-      .to.revertedWith('Expected totalAmount does not match')
-
-    await expect(tokenLockup.connect(canceler).cancelTimelock(recipientAccount.address, 0, scheduledId, commenced, amount, accounts[1].address))
+    await expect(tokenLockup.connect(canceler).cancelTimelock(recipientAccount.address, 0))
       .to.emit(tokenLockup, 'TimelockCanceled')
       .withArgs(
         canceler.address, // canceledBy
         recipientAccount.address, // target,
         0, // timelock
-        accounts[1].address, // reclaim token to
+        [canceler.address], // reclaim token to
         50, // canceledAmount
         0 // paidAmount
       )
 
-    await expect(tokenLockup.connect(canceler).cancelTimelock(recipientAccount.address, 0, scheduledId, commenced, amount, accounts[1].address))
+    await expect(tokenLockup.connect(canceler).cancelTimelock(recipientAccount.address, 0))
       .to.revertedWith('Timelock has no value left')
-    await expect(tokenLockup.connect(canceler).cancelTimelock(recipientAccount.address, 1, scheduledId, commenced, amount, accounts[1].address))
+    await expect(tokenLockup.connect(canceler).cancelTimelock(recipientAccount.address, 1))
       .to.emit(tokenLockup, 'TimelockCanceled')
       .withArgs(
         canceler.address, // canceledBy
         recipientAccount.address, // target
         1, // timelock
-        accounts[1].address, // reclaim token to
+        [canceler.address], // reclaim token to
         50, // canceledAmount
         0 // paidAmount
       )
@@ -145,13 +136,13 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(0)
       expect(await token.balanceOf(reserveAccount.address)).to.equal(0)
 
-      await expect(tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 0, scheduledId, commenced, amount, reserveAccount.address))
+      await expect(tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 0))
         .to.emit(tokenLockup, 'TimelockCanceled')
         .withArgs(
           reserveAccount.address, // canceledBy
           recipientAccount.address, // target,
           0, // timelock
-          reserveAccount.address, // reclaim token to
+          [reserveAccount.address], // reclaim token to
           100, // canceledAmount
           0 // paidAmount
         )
@@ -166,13 +157,13 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.lockedBalanceOf(recipientAccount.address)).to.equal(50)
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(50)
 
-      await expect(tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 0, scheduledId, commenced, amount, reserveAccount.address))
+      await expect(tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 0))
         .to.emit(tokenLockup, 'TimelockCanceled')
         .withArgs(
           reserveAccount.address, // canceledBy
           recipientAccount.address, // target,
           0, // timelock
-          reserveAccount.address, // reclaim token to
+          [reserveAccount.address], // reclaim token to
           50, // canceledAmount
           50 // paidAmount
         )
@@ -187,7 +178,7 @@ describe('TokenLockup calculate unlocked', async function () {
       expect(await tokenLockup.lockedBalanceOf(recipientAccount.address)).to.equal(0)
       expect(await tokenLockup.unlockedBalanceOf(recipientAccount.address)).to.equal(100)
 
-      await expect(tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 0, scheduledId, commenced, amount, reserveAccount.address))
+      await expect(tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 0))
         .to.revertedWith('Timelock has no value left')
     })
 
@@ -195,7 +186,7 @@ describe('TokenLockup calculate unlocked', async function () {
       let errorMessage
 
       try {
-        await tokenLockup.connect(accounts[1]).cancelTimelock(recipientAccount.address, 0, scheduledId, commenced, amount, reserveAccount.address)
+        await tokenLockup.connect(accounts[1]).cancelTimelock(recipientAccount.address, 0)
       } catch (e) {
         errorMessage = e.message
       }
@@ -210,7 +201,7 @@ describe('TokenLockup calculate unlocked', async function () {
       let errorMessage
 
       try {
-        await tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 1, scheduledId, commenced, amount, reserveAccount.address)
+        await tokenLockup.connect(reserveAccount).cancelTimelock(recipientAccount.address, 1)
       } catch (e) {
         errorMessage = e.message
       }

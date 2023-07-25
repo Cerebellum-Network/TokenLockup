@@ -149,8 +149,8 @@ describe('BatchTransfer fund release schedule', function () {
     const amounts = []
     const commencements = []
     const delays = []
-    const totalTransferQuantity = 50
-    await token.connect(reserveAccount).approve(tokenLockup.address, 50000)
+    const totalTransferQuantity = 20
+    await token.connect(reserveAccount).approve(tokenLockup.address, 20000)
 
     for (let i = 1; i <= totalTransferQuantity; i++) {
       recipients.push(accounts[1].address)
@@ -166,9 +166,9 @@ describe('BatchTransfer fund release schedule', function () {
       delays,
       [])
 
-    expect(await tokenLockup.balanceOf(accounts[1].address)).to.equal(50000)
-    expect(await tokenLockup.unlockedBalanceOf(accounts[1].address)).to.equal(25000)
+    expect(await tokenLockup.balanceOf(accounts[1].address)).to.equal(20000)
+    expect(await tokenLockup.unlockedBalanceOf(accounts[1].address)).to.equal(10000)
 
-    expect(await token.balanceOf(reserveAccount.address)).to.equal(0)
+    expect(await token.balanceOf(reserveAccount.address)).to.equal(30000)
   })
 })

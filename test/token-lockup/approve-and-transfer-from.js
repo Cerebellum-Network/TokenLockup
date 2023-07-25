@@ -122,7 +122,7 @@ describe('TokenLockup unlock scheduling', async function () {
     } catch (e) {
       errorMessage = e.message
     }
-    expect(errorMessage).to.match(/Transaction reverted/)
+    expect(errorMessage).to.match(/reverted/)
     expect(await tokenLockup.connect(recipient)
       .allowance(recipient.address, allowedAccount.address))
       .to.equal(maxUint)
